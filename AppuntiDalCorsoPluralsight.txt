@@ -1636,15 +1636,244 @@ Boot disk:
 - Some OS images are customized for Compute Engine.
 - Can survive VM deletion if "Delete boot disk when instance is deleted" is disabled.
 
-	PERSISTENT DISKS 
+	PERSISTENT DISKS (not attached to the VM)
 Network storage appearing as a block device:
 - attached to a VM through the network interface 
 - durable storage: can survive VM terminate 
 - bootable: you can attach to a VM and boot from it 
+- snapshots: incremental backups 
+- performance: scales with size 
+- HDD(magnetic) or SSD(faster, solid-state) options.
+- Disk resizing: even runnng and attached.
+- can be attached in read-only mode to multiple VMs,
+	is cheaper to replicating data for each VM.
+- zonal or regional (
+	pd-standard: backed by a standard hard disk drive, 
+	pd-balanced: backed by a solid state drives, 
+		balanced performance and cost as a standard persistent disks
+	pd-ssd:backed by solid state drives. 
+	) 
+- encryption keys (Google-managed, Customer-managed, Customer-supplied).
+	by default Google encryot all data for you ad REST.
+
+	LOCAL SSD DISKS are physically attached to a VM.
+- more IOPS, lower latency and higher throughput than persistent disk 
+- 375-GB disk up to eight, total of 3 TB 
+- data survives a reset, but not a VM stop or terminate 
+- VM-specific: cannot be reattached to a different VM.
+
+	RAM DISK 
+- tmpfs (store data in memory)
+- faster than local disk, slower than memory 
+	. use when your application expects a file system structure 
+		and cannot directly store its data in memory 
+	. fast scratch disk, or fast cache
+- very volatile, erase on stop or restart 
+- may need a larger machine type if RAM was sized for application 
+- consider using a persistent disk to back up RAM disk data.
+
+
+	SUMMARY OF DISK OPTIONS 
+
+				Persistent disk HDD		Persistent disk SSD 	Local SSD disk 		RAM disk 
+																(ephemeral)			(ephemeral) 					
+Data 			yes						yes						no					no
+redundancy
+
+Encryption		yes						yes						yes					N/A 
+at rest 
+
+Snapshotting	yes						yes						no 					no	
+
+Bootable		yes 					yes 					no 					not 	
+
+use case 	General, bulk file storage. Very random IOPS.		High IOPS and low latency. 	Low latency and risk of data loss.
+
+	
+	Maximum persistent disks 
+
+Machine Type			Disk number limit 
+
+Shared-core 			16
+
+Standard 				128
+High-memory 
+High-CPU 
+Memory-optimized 
+Compute-Optimized
+
+
+Persistent disk management differences:
+
+Cloud Persistent Disk:
+- single file system is best 
+- resize (grow) disks 
+- resize file system 
+- built-in snapshot service 
+- automatic encryption 
+
+Computer Hardware Disk:
+- Partitioning 
+- Repartitioning disk 
+- Reformat 
+- Redundant disk arrays 
+- subvolume management and snapshots
+- encrypt files before write to disk.
 
 
 
+	COMMON ACTIONS WITH COMPUTE ENGINE 
 
+- Metadata and scripts
+
+time: Boot ->  Run ->   Maintenance -> Shutdown
+			Metadata Metadata Metadata       Metadata
+			startup-script-url=URL 					 shutdown-script-url=URL
+
+For example,
+you can write a startup script that gets the metadata key value pair for an instance external IP address
+and use that IP address in your script to set up a database.
+
+Because the default Metadata keys are the same on every instance,
+you can reuse your script without having to update it for each instance.
+This helps you to create less brittle code for your applications.
+
+Storing and retrieving instance metadata is a very common compute engine action. 
+
+I recommend storing the startup and shutdown scripts in cold storage.
+
+- Move an instance to a new zone
+	
+	. Automated process (moving within region):
+		- > gcloud compute instances move 
+		- Update references to VM, not automatic
+	
+	. Manual process (moving between regions):
+		- Snapshot all persistent disks on the source VM.
+		- Create new persistent disks in destinatione zone restored from shapshots.
+		- Create new VM  in the destination zone and attach new persistent disks.
+		- Assign static IP to new VM.
+		- Update references to VM.
+		- Delete the snapshots, original disks, and original VM. 
+
+Snapshot can be used for: 
+
+- Back up critical data
+	data -> Snapshot Service(Cloud Storage)
+
+- Migrate data between zones
+	data in zone1 -> Snapshot Service -> data in zone2
+
+- Transfer to SSD to improve performance 
+	(trasferring data to a different disk type)
+	Persistent Disk HDD -> Snapshot Service -> Persistent Disk SSD 
+
+Persistent disk snapshots:
+- Snapshot is not available for local SSD
+- Creates an incremental backup to Cloud Storage
+		Not visible in your buckets, managed by the snapshot service.
+		Consider cron jobs for periodic incremental backup.
+- Snapshots can be restored to a new persistent disk.
+		New disk can be in another region or zone in the same project.
+		Basis of VM migration: "moving" a VM to a new zone.
+			Snapshot doesn't backup VM metadata, tags, etc.
+
+Another common Compute Engine action is to:
+
+Resize persistent disk
+
+you can grow disks, but never shrink them!!!
+
+
+LAB - working with Virtual Machine
+
+Creiamo una VM "mc-server"
+
+Access scopes: Set access for each API
+Storage: Read Write (this allow the VM to read and write Cloud Storage bucket)
+Disks: Add a new disk "minecraft-disk"
+type: SSD persistent disk 
+Networking: Network tags: minecraft-server 
+External IP: Reserve a new static IP address
+name: mc-server-ip 
+
+When the instance of the VM is up and running,
+open the SSH of the VM:
+
+> sudo mkdir -p /home/minecraft
+
+> sudo mkfs.ext4 -F -E lazy_itable_init=0, lazy_jurnal_init=0,discard /dev/disk/by-id/google-minecraft-disk
+
+> sudo mount -o discard,defaults /dev/disk/by-id/google-minecraft-disk /home/minecraft 
+
+> sudo apt-get update 
+
+> sudo apt-get install -y default-jre-headless 
+
+> cd /home/minecraft 
+
+> sudo wget https://launcher.mojang.com/v1/objects/algrkjbfnaebnfaiul/server.jar 
+
+> sudo java -Xmx1024M -Xms1024M -jar server.jar nogui 
+
+> sudo ls -l 
+
+> sudo nano eula.txt 
+		andiamo a modificare il file: eula=true 
+
+> sudo apt-get install -y screen 
+
+> sudo screen -S mcs java _Xmx1024M -Xms1024M -jar server.jar nogui
+
+Nei log: Starting Minecraft server on *:25565 
+
+Aggiorniamo le Firewall Rules per abilitare il traffico sulla porta.
+
+VPC network -> Firewall rules -> Create Firewall rule 
+name: minecraft-rule, Target tags: minecraft-server(la stessa della VM)
+Source IP ranges: 0.0.0.0/0 (from anywhere) 
+Specified protocols and ports: tcp:25565
+
+andando su mcsrvstat.us possiamo inserire l'external IP della VM per verificarne lo stato.
+
+Adesso che il server è up and running, vogliamo scheduralare 
+backup.
+
+Rientramo in SSH della VM
+
+> export YOUR_BUCKET_NAME=projectID
+
+> echo $YOUR_BUCKET_NAME 
+
+> gsutil mb gs://$YOUR_BUCKET_NAME-minecraft-backup 
+
+> cd /home/minecraft
+
+> sudo nano /home/minecraft/backup.sh 
+		gnòeakjdfvn.eshgfnoòàriJSLEKFMROahgnkla.ghq	adksn.
+
+> sudo chmod 755 /home/minecraft/backuop.sh 
+
+> . /home/minecraft/backup.sh 
+
+> sudo chrontab -e
+	con nano possiamo impostare nel file:
+	*/4 * * * /home/minecraft/backup.sh (backup automatico ogni 4 ore)
+
+OSS: per non accumulare i backup impostare il lifecycle per l'autocancellazione da Cloud Storage.
+
+Adesso stoppiamo la VM, entriamo nella tab della VM e andiamo in edit.
+Custom metadata: 
+
+key:startuoo-script-url, 
+value: the location of the file backup.sh (https://storage.googleapis.com/cloud-training.../startup.sh)
+
+key: shutdown-script-url
+value: http://..../shutdown.sh 
+
+Al restart troveremo la stessa configurazione.
+
+That's the end of the laaaaab!
 
 
 
