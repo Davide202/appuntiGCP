@@ -1,0 +1,1676 @@
+GOOGLE CLOUD PLATFORM FUNDAMENTALS - CORE INFRASTUCTURE
+	
+	ORGANIZZAZIONE
+Le risorse sono organizzate gerarchicamente in:
+- org node: company
+- folders
+- projects: test, prod
+- resources: vm, storage
+
+Projects hanno tre identificativi:
+1 - Project ID (unico globalmente, scelto, immutabile)
+2 - Project Name (scelto, mutabile)
+3 - Project Number (unico, immutabile)
+
+	IAM
+	who can do what on which resource???
+who: google account, service account, google group, cloud identity or g suite domain
+predefined roles: owner, editor, viewer, billing administrator
+custom roles
+oss: i ruoli dipendono dal tipo di risorsa a cui ci stiamo riferendo
+
+il service account permette di accedere ad una risorsa da una vm
+
+	VPC
+vpc è globale ed ha subnetwork regionali
+ci sono 5 tipi di load balancing:
+1 global http(s), based on load, can route differente urls to differente back ends
+2 global ssl proxy, 
+3 global tcp proxy 
+4 regional 
+5 regiona internal 
+
+Interconnection  options:
+vpn, secure multi-gbps connection over vpn tunnels
+direct peering, private connection between you and google for your hybrid cloud workloads
+carrier peering, connection through the largest partner network of service providers
+dedicated interconnect, connect N x 10G transport circuits for private cloud traffic to google cloud at google pops
+
+	COMPUTE ENGINE
+	
+- Creare una VM dalla cloud shell
+per vedere la lista delle zone:
+>gcloud compute zones list | grep us-central1
+per settare una zona:
+>gcloud config set compute/zone us-central1-c
+creare una vm
+>gcloud compute instances create "my-vm-2" \
+>--machine-type "n1-standard-1" \
+>--image-project "debian-cloud" \
+>--image "debian-9-stretch-v20170918" \
+>--subnet "default"
+
+la vm così creata avrà ip interno ed esterno
+nel lab entra in ssh di vm1
+>ssh my-vm-1
+e fa il ping della vm2:
+>ping my-vm-2
+e viceversa
+
+	STORAGE
+	
+	Cloud Storage: binary large-object storage
+ogni oggetto ha una url
+gli oggetti non si possono modificare ma solo creare, scaricare, cancellare e versionare
+cloud storage è organizzato in buckets
+che hanno nome unico e possono essere controllati con IAM policies
+è possibile definire un life cycle per gli oggetti
+oss: se il versionamento non è abilitato, l'upload sovrascrive
+ci sono 4 classi: (CLOUD STORAGE CLASSES)
+- multi-regional per accesso frequente
+- regional per accesso frequente dalla stessa region
+- nearline per una frequenza di accesso inferiore ad 1accesso/mese (backups)
+- coldline per una frequenza di accesso inferiore ad 1accesso/anno (archiving, disaster recovery)
+il costo è decrescente per gb, crescente per utilizzo dei trasferimenti.
+Cloud Storage è integrato con tutti gli altri servizi:
+è possibile importare ed esportare tables di BigQuery
+startup scripts, images, and general object of Compute Engine
+object storage, logs, datastore backups of App Engine 
+import and export tables of Cloud SQL 
+e può essere gestito dall'utente.
+
+	Cloud BigTable is managed NoSQL
+wide-column database service for  terabyte applications
+è ideale per analytical applications, iot, user analytics, finacial data analysis
+native compatibility with big data, hadoop ecosystems
+è possibile accedere ai dati utilizzando Application API, 
+può ricevere i dati in stream
+da processi batch.
+
+	Cloud SQL is managed RDBMS
+offers mysql and postgresql databases as a service
+ammette le transazioni
+automatic replication
+managed backups
+vertical (read and write) and horizontal scaling (read)
+google security
+è possibile utilizzarlo con Compute Engine e con App Engine e con servizi esterni.
+
+	Cloud Spanner is a horizonatally scalable RDBMS
+Strong global consistency
+managed instances with high availability
+SQL queries
+Automatic replication
+transactional consistency
+
+	Cloud Datastore is a horizonatally scalable NoSQL DB
+Designed for application backends
+Support transactions (BigTable NO)
+Includes a free daily quota
+SQL-like queries
+
+
+
+	COMPARING  STORAGE SERVICES 
+	
+Cloud Datastore:	NoSQL document	
+					Transactions
+					NO Complex queries
+					Terabytes+ of Capacity
+					Unit size: 1MB/entity
+					best for: semi-structured application data, durable key-value data
+					use cases: getting started, App Engine applications
+Cloud Bigtable:	NoSQL wide column
+				transactions: single-row
+				No complex queries
+				Petabytes+ of capacity
+				Unit size: 10MB/cell, 100MB/row
+				best for: "flat" data, heavy read/write, events, analytical data
+				use cases: AdTech, Financial and IoT data
+Cloud Storage:	immutable object / Blobstore
+				No transactions
+				No complex queries
+				Petabytes+ of capacity
+				Unit size: 5TB/object
+				best for: structured and unstructured binary or object data
+				use cases: images, large media files, backups.
+Cloud SQL:	Relatioal SQL for OLTP
+			Transactions
+			Complex queries
+			Terabytes of Capacity
+			Unit size determined by DB engine
+			best for: web frameworks, exixting applications
+			use cases: user credentials, customer orders
+Cloud Spanner:	Relatioal SQL for OLTP
+				Transactions
+				Complex queries
+				Terabytes of capacity
+				Unit size: 10MB10.240Mb/row
+				best for: large-scale database applications (>2TB)
+				use cases: whenever high I/O, global consistency is needed
+BigQuery:	Relatioal SQL for OLAP
+			NO Transactions
+			Complex queries
+			Petabytes of capacity
+			Unit size: 10MB/row
+	big data analysis and interactive querying capabilities
+			best for: interactive querying, offline analytics
+			use cases: data warehousing.
+			
+	CREARE UN BUCKET
+dopo aver creato una VM linux con Compute Engine da UI, nella zona us-central1-a,
+con script di installazione:
+> apt-get update
+apt-get install apache2 php-mysql -y
+service apache2 restart
+
+procediamo a creare un Cloud Storage bucket da Cloud Shell, multiregion:
+utilizzando come nome del bucket il project id:
+>gsutil mb -l US gs://$DEVSHELL_PROJECT_ID
+copiamo un'immagine da un'altro bucket:
+>gsutil cp gs://cloud-training/gcpfci/my-excellent-blog.png my-excellent-blog.png
+adesso posso vedere l'immagine tra i file della directory corrente con il comando:
+>ls
+adesso posso copiare l'immagine nel mio bucket:
+>gsutil cp my-excellent-blog.png gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png
+>gsutil ls gs://$DEVSHELL_PROJECT_ID
+
+posso anche visualizzare l'immagine entrando da UI in Cloud Storage e nel bucket.
+se flaggo share publicly all'immagine, cliccando su Public link posso copiare il link dell'immagine.
+
+
+
+	CREARE UN DB Cloud SQL
+da interfaccia grafica basta scegliere il tipo di VM, nome, la zona, pwd....
+dopo aver creato il db bisogna creare almeno un user
+configuro il db per essere contattato solo dalla mia VM,
+copio l'IP pubblico della VM 35.226.78.114 e lo incollo nelle authorizazioni del db,
+creo una nuova network con subnet 35.226.78.114/32.
+
+entro in ssh della vm e la configuro per utilizzare l'istanza di cloud sql.
+
+
+
+---------------------------------------------------------
+	CONTAINERS in the Cloud GKE
+
+Compute Engine is Infrustructure as a Service 
+App Engine is Platform as a service 
+
+Kubernetes Engine si trova a metà strada tra IaaS e PaaS
+
+IaaS: ogni App ha un OS(sistema operativo)
+ replicando le App replichiamo anche il SO
+ 
+PaaS: le risorse vengono replicate "insieme" 
+e non singolarmente in base alle esigenze
+
+Containers: abbiamo un'unico SO, 
+le App hanno solo le dipendenze (Libs)
+le App vengono replicate similmente alla PaaS ma indipendentemente l'una dall'altra
+i container sono portabili, senza bisogno di re-build
+e facilmente replicabili
+
+Kubernetes orchestra i container e rende semplice la gestione
+Cloud Build rende semplice la creazione di container
+
+	ESEMPIO DI CREAZIONE DI CONTAINER CON PYTHON
+---
+app.py
+
+from flask import Flask
+app= Flask(__name__)
+
+@app.route("/")
+def hello():
+	return "Hello World! \n"
+	
+@app.route("/version")
+def version():
+	return "Helloworld 1.0 \n"
+	
+if __name__ == "__main__":
+	app.run(host='0.0.0.0')
+
+---	
+requirements.txt
+
+Flask==0.12
+uwsgi==2.0.15
+
+---
+Dockerfile
+
+FROM ubuntu:18.10
+RUN apt-get update -y && \
+	apt-get install -y puthon3-pip python3.dev
+COPY requirements.txt /app/requirements.txt
+WORKDIR /app
+RUN pip3 install -r requirements.txt
+COPY . /app
+ENTRYPOINT ["python3", "app.py"]
+
+---
+	BUILD AND RUN
+> docker build -t py-server .
+> docker run -d py-server
+
+---
+
+Kubernetes è organizzato in cluster
+ogni cluster contiene il master e i nodi
+il comando per creare il cluster:
+
+> gcloud container clusters create k1
+
+i nodi contengono i pod
+ogni pod contiene:
+	- Virtual Ethernet
+	- uno o più container
+	- uno o più volume
+
+OSS: di solito un pod contiene più container quando questi sono strettamente correlati
+altrimenti conviene avere un container per ogni pod
+
+Supponiamo un esempio in cui abbiamo un cluster Kubernetes
+formato dal master, un nodo che contiene un pod
+
+> kubectl container clusters create k1
+> kubectl run nginx --image=nginx:1.15.7
+> kubectl get pods
+> kubectl expose deployments nginx --port=80 --type=LoadBalancer
+
+Gli sviluppatori accedono ad un API che permette di accedere al master che gestisce i deployments
+Il Network Load Balancer espone un indirizzo IP pubblico per accedere ai servizi dall'esterno (end users)
+	esso inoltre ha un IP fisso con cui si connette al service che si trova all'interno del cluster,
+	il quale è connesso ai nodi e quindi ai pod che contengono i servizi.
+	Il service rappresenta quindi un gruppo di pod, che rispondono all'end point.
+IL service è necessario, perchè espone un IP fisso,
+mentre i pod che sono replicabili, hanno indirizzo IP effimero.
+	
+> kubectl get service
+NAME	TYPE			CLUSTER-IP		EXTERNAL-IP			PORT(S)	AGE
+nginx	LoadBalancer	10.0.65.118		104.198.149.140		80/TCP	5m
+	
+	SCALING IN Kubernetes-GKE
+	
+> kubectl scale nginx --replicas=3
+In questo modo il POD viene replicato in altri due nodi,
+quindi ora il cluster contiene il master(che contiene/gestisce il deployment)
+e tre nodi, ciascun nodo contiene un POD con nginx all'interno.
+
+Possiamo anche utilizzare l'AUTOSCALING:	
+> kubectl autoscale nginx --min=10 --max=15 --cpu=80
+> kubectl get pods -l "app=nginx" -o yaml
+abbiamo specificato il num min, il num max di pod e il criterio di scaling up
+
+Possiamo anche utilizzare un comando non imperativo ma dichiarativo,
+cioè scrivendo i comandi in specifici file di configurazione in formato yaml.
+
+	DEPLOYMENTS
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+	  app: nginx
+  template:
+    metadata:
+	  labels:
+	    app: nginx
+	spec:
+	  containers:
+	  - name: nginx
+	    image: nginx:1.15.7
+		ports:
+		- conainerPort: 80
+
+---
+Questi file posso essere memorizzati e versionati
+questo deployment getisce i deployment dei pod che l'etichetta specificata.
+
+Per utilizzare questo file di configurazione utilizziamo il comando:
+> kubectl apply -f nginx-deployment.yaml
+
+	REPLICASET
+Un'altro modo di gestire la vita dei container, oltre al deployment,
+sono i replicaset.
+
+> kubectl get replicasets
+> kubectl get pods
+> kubectl get deployments
+> kubectl get services
+
+	UPDATE DELLA VERSIONE DELL'APPLICAZIONE
+Kubernetes ha delle strategie per effettuare l'aggiornamento delle versioni dell'applicazione
+e quindi l'aggiornamento dei pod, senza però creare un disservizio,
+cioè i pod simili non vengono stoppati e riavviati tutti contemporaneamente,
+ma uno più di uno alla volta a seconda della strategia scelta.
+
+DEPLOYMENTS
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 5
+  strategy:
+    
+	rollingUpdate:
+	  maxSurge: 1
+	  maxUnavailable: 0
+	type: RollingUpdate
+	
+  selector:
+    matchLabels:
+	  app: nginx
+  template:
+    metadata:
+	  labels:
+	    app: nginx
+	spec:
+	  containers:
+	  - name: nginx
+	    image: nginx:1.15.7
+		ports:
+		- conainerPort: 80
+
+---
+
+
+ANTHOS is Google's modern solution for hybrid and multi-cloud systems
+			and services managament
+	- Kubernetes and GKE On-Prem create the foundation
+	- On-premises and Cloud environments stay in sync
+	- A rich set of tools is provided for:
+		. managing services on-premises and in the Cloud
+		. monitoring systems and services
+		. migrating applications from VMs into clusters
+		. maintaining consestent policies across all clustes,
+		  wheather on-premises or in the Cloud
+		  
+BUILDING A MODERN HYBRID INFRASTRUCTURE, STEP BY STEP
+
+Google Kubernetes Engine (GKE) on the Cloud and GKE On-Prem
+are integrated with GCP Marketplace.
+
+Cloud Interconnect:
+On the Cloud: Anthos Service Mesh (service mesh)
+On-Prem: Isto Open Source (service mesh)
+
+Stackdriver (logging and monitoring) 
+comunicates with both GKE on the Cloud and On-Prem.
+
+Anthos Configuration Managements (sync policy)
+comunica attraverso Cloud Interconnect,
+è presente in GKE e in GKE On-Prem,
+per GKE On-Prem è disponibile Polici Repository (GIT)(store policy)
+
+LAB: GETTING STARTED WITH KUBERNETES ENGINE
+https://app.pluralsight.com/course-player?clipId=97cdd40e-3979-4dc0-9f8d-b31044fe4a28
+Creazione di un cluster Kubernetes con un LoadBalancer.
+
+Per prima cosa andiamo nella sezione 
+APIs and Services per verificare che l'API è abilitato.
+Cerchiamo:
+Kubernetes Engine API
+Container Registry API
+
+Quindi eseguiamo lo start del cluster da Cloud Shell:
+> export MY_ZONE=us-central1-f
+> gcloud container clusters create webfrontend --zone $MY_ZONE --num-nodes 2
+> kubectl version
+
+In Compute Engine possiamo verificare la presenza di due VM e 
+in Kubernetes Engine possiamo verificare la presenza del cluster e del size (2)
+
+> kubectl run nginx --image=nginx:1.10.0
+> kubectl get pods
+
+> kubectl expose deployment nginx --port 80 --type LoadBalancer
+> kubectl get services
+adesso è assegnato un IP address
+
+> kubectl scale deployment nginx --replicas 3
+> kubectl get pods
+> kubectl get services
+
+
+	APP ENGINE
+	
+Nessun controllo sull'architettura PaaS
+LoadBalancer e autoscaling
+especially suited for building scalable web applications and mobile backends
+
+App Engine offre due ambienti: Flexible e Standard
+
+App Engine standard environment
+	easily deploy your applications
+	autoscale workloads
+	free daily quota
+	usage based pricing
+	SDKs for development, testing, deployment
+	specifica versione of Java Python PHP Go 
+	SANDBOX constraints: no writing to local files, all requests time out at 60secs, limits on third-party software.
+	Each project App Engine contains App Servers and Application instances,
+		Memcache, Task queues, Sheduled tasks, Search, Logs.
+	App Engine automatically scales and reliably serves your web application
+				can access a variety of services using dedicated APIs
+	
+App Engine flexible environment
+	build and deploy containerized apps with a click
+	NO SANDBOX constaints
+	can access App Engine resources
+	
+COMPARAZIONE STANDARD-FLEXIBLE 
+					standard environment			flexible environment
+instance startup	milliseconds					minutes
+SSH access			no								yes (although not by default)
+write to local disk	no								yes (but writes are ephemeral)
+support for 		no								yes
+ 3rd-party binaries
+network-access		via app engine services			yes
+
+pricing model		after free daily use, pay		pay for resources allocation per hour
+					per instance class,				no automatic shutdown
+					with automatica shutdown		
+
+	Kubernetes Engine 
+language support: any, 
+service model: hybrid
+primary use case: container based workloads
+
+	App Engine Flexible
+language support: any
+service model: PaaS
+primary use case: web and mobile applications, container-based workloads
+
+	App Engine Standard
+language support: Java Python Go PHP
+service model: PaaS
+primary use cases: web and mobile applications
+
+
+	CLOUD ENDPOINTS AND APIGEE EDGE
+
+Cloud Endpoints helps you create and maintain APIs 
+	distribuited API management through an API console
+	expose your API using RESTful interface
+	control access and validae calls with JSON Web Tokens and Google API Keys
+	identify web, mobile users with auth0 and firebase authentication
+	generate client libraries
+	supports: App Engine Flexible Env, Kubernetes Engine, Compute Engine runtime environments and
+			Android, iOS, Javascript clients.
+			
+Apigee Edge is also a platform for developing and managing API proxies
+	it has a focus on business problems like rate limiting, quotas, analytics...
+	
+LAB APP ENGINE
+creare un'istanza di app engine standard
+
+> git clone https://github.com/GoogleCloudPlatform/appengine-guestbook-python 
+> cd appengine-guestbook-python 
+> ls -l 
+> cat app.yml
+> dev_appserver.py ./app.yaml 
+> gcloud app deploy ./index.yaml ./app.yaml 
+
+
+
+Cloud Source Repositories: 
+	fully featured Git repositorues hosted on Google Cloud Platform
+	
+Cloud Functions:
+	create single purpose functions that respond to events without a server or runtime.
+	written in Javascript, execute in managed Node.js environment on GCP 
+	
+Deployment Manager:
+	provides repeatable deployments
+	create a .yaml template describing your environment and use Deployment Manager to create resources.
+	
+Monitoring:
+	Proactive instrumentation
+	
+Stackdriver:
+	Monitoring
+		platform, system and application metrics
+		uptime/health checks
+		dashboards and alerts
+	Logging
+		platform, system and application logs
+		log search, view, filter and export
+		log-based metrics
+	Debugger
+		debug applications
+	Error Reporting
+		error notifications
+		error dashboard 
+	Trace
+		latency reporting and sampling
+		per-URL latency and statistics
+	Profiler
+		continuous profiling of CPU and memory consumption 
+
+LAB deployment-manager and stack driver 
+
+> export MY_ZONE=us-central1-f
+> echo $DEVSHELL_PROJECT_ID
+> nano mydeploy.yaml
+---
+resources:
+- name: my-vm-1
+  type: compute.v1.instance
+  properties:
+    zone: ZONE
+	machineType: zones/ZONE/machineTypes/n1-standard-1
+	metadata:
+	  items:
+	  - key: startup-script
+	    value: "apt-get update"
+	disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+	    sourceImage: https://www.googleapis.com/.../debian...
+    networkInterfaces:
+    - network: https://www.googleapis.com/.../default
+      accessConfigs:
+	  - name: External NAT
+	    type: ONE_TO_ONE_NAT
+--- 
+> sed -i -e 's/PROJECT_ID/'$DEVSHELL_PROJECT_ID/mydeploy.yaml
+> sed -i -e 's/ZONE/'$MY_ZONE/mydeploy.yaml 
+> gcloud deployment-manager deployments create my_first_depl --config mydeploy.yaml 
+> gcloud deployment-manager deployments list 
+
+
+	BIG DATA AND MACHINE LEARNING
+	
+	Google Cloud's big data services are fully managed and scalable
+	
+Cloud Dataproc:
+	managed Hadoop MapReduce, Spark, Pig, Hive service 
+	create clusters in 90 seconds or less on average
+	scale clusters up and down even when jobs are running
+	easily migrate on-premises Hadoop jobs to the cloud
+	save money with preemptible instances 
+	use Spark Machine Learning Libraries (MLlib) to run classifications algorithms
+	
+Cloud Dataflow:
+	stream and batch processing, unified and simplified pipelines
+	processes data using Compute Engine instances.
+		clusters are sized for you
+		automated scaling, no instance provisioning required
+	Spurce (BigQuery) -> Transforms( Dataflow) -> Sink (Cloud Storage)
+	ETL (exctract/transform/load) pipelines to move, filter, enrich, shape data 
+	Data analysis: batch computation or continuous computation using steaming
+	Orchestation: create pipelines that coordinate services, including external services
+	Integrates with GCP services like Cloud Storage, Cloud Pub/Sub, BigQuery, BigTable, Open source Java and Python SDKs.
+	
+BigQuery:
+	Analytics database, stream data at 100000 rows per second
+	is a fully managed data warehouse
+	provides near rea-time interactive analysis of massive datasets (hundreds of TBs) using SQL syntax (SQL 2011)
+	no cluster maintenance is required
+	can load from Cloud Storage or Cloud Datastore or steam into BigQuery up to 100000 rows per second
+	in additional to SQL queries, you can read and write data from Cloud Dataflow, Hadoop and Spark 
+	
+	BigQuery runs on Google's high performance infrastructure, 
+	it is a globa service
+	
+	compute and storage are separated with a terabit network in between
+	you only pay for storage and processing used
+	automatic discount for long-term data storage
+	
+	
+Cloud Pub/Sub:
+	scalable and flexible enterprise messaging 
+	is scalable, reliable messaging
+	supports many-to-many asynchronous messaging 
+	application components make push/pull subscriptions to topics
+	includes support for offline consumers
+	Pub=publisher,Sub=subscriber
+	builing block for data ingestion in Dataflow, IoT, Marketing Analytics
+	Foundation for Dataflow streaming
+	push notifications for cloud-based applications
+	connect applications across Google Cloud Platform (push/pull between Compute Engine and App Engine)
+	
+	
+Cloud Datalab:
+	interactive data exploration
+	interactive tool for large-scale data exploration, transformation, analysis, visualizatioon
+	integrated, open source, built on Jupyter (formerly Python)
+	analyze data in BigQuery, Compute Engine, Cloud Storage using Python, SQL, Javascript
+	Easily deploy models to BigQuery
+
+
+
+Google Cloud Machine Learning Platform
+
+	TensorFlow, Cloud ML, Machine Learning APIs
+	Open source toool to build and run neural network models
+		wide platform support: CPU or GPU, mobile server or cloud
+	Fully managed machine learning service
+		familiar notebook-based developer experience
+		optimized for Google infrastructure, integrates with BigQuery and Cloud Storage
+	Pre-trained machine learning models bilt by Google
+		speech: stram results in real time, detects 80 languages
+		vision: identify object, landmarks, text, content
+		translate: language translation including detection
+		natual language: structure, meaning of text 
+	
+	Cloud Machine Learning platform:
+	- for structured data
+		classification and regression
+		recommendation
+		anomaly detection
+	- for unstructured data
+		image and video analytics
+		text analytics 
+	
+	Cloud Vision API
+		analyze images with a simple REST API 
+		logo detection, label detection etc
+		with Cloud Vision API you can:
+		gain insight from images
+		detect inappropriate content
+		analyze sentiment
+		extract text
+		
+	Cloud Natural Language API (voice and text???)
+		can return text in real time
+		highly accurate, even in noisy evironments
+		access from any device
+		80 languages 
+		uses machine learning models to reveal structure and meaning of text
+		extract information about items mentioned in text documents, news articles, blog posts.
+		
+	Cloud Translation API
+		translate arbitrary strings between thousands of language pairs
+		programmatically detect a document's language 
+		support for dozens of languages 
+	
+	Cloud Video Intelligence API
+		annotate the contents of videos
+		detect scene changes
+		flag inappropriate content
+		support for a cariety of video formats 
+		
+		
+	LAB BigQuery
+	
+Dalla dashboard di BigQuery creiamo un nuovo dataset specificando Dataset ID, location, Data espiration.
+Nella tab Create Table, dal menu File upload scegliamo Google Cloud Storage e specifichiamo il path del bucket/file da importare.
+Specificare il nome della table di destinazione, inseriamo il flag per il riconoscimento automatico dello schema.
+Dopo aver creato la table è possibile esplorarla da UI, cliccando sul pulsante Compose Query è possibile comporre la query per interrogare la table.
+
+select int64_field_6 as hour, count(*) as hitcount
+from logdata.access....
+group by hour order by hour ;
+
+Possiamo scrivere le query anche da Shell:
+> bq query "select string_field_10 as request, count(*) as requestcount from logdata.accesslog group by request order by requestcount desc" 
+
+
+
+
+	COMPARING COMPUTE OPTIONS
+
+Compute Engine:
+	service model: IaaS
+	use cases: general computing workloads
+	
+Kubernetes Engine:
+	service model: Hybrid
+	use cases: container-based workloads
+	
+App Engine Flexible:
+	service model: PaaS
+	use cases: web and mobile applications; container-based workloads
+	
+App Engine Standard:
+	service model: PaaS
+	use cases: web and mobile applications
+	
+Cloud Functions:
+	service model: Serverless
+	use cases: ephemeral functions responding to events 
+	
+
+	COMPARING LOAD-BALANCING OPTIONS
+	
+Global HTTP(S):
+	layer 7 load balancing based on load
+	can route different URLs to different back ends
+	
+Global SSL Proxy:
+	layer 4 load balancing of non-HTTPS SSL traffic based on load
+	supported on specific port numbers
+	
+Global TCP Proxy:
+	layer 4 load balancing of non-SSL TCP traffic 
+	supported on specific port numbers 
+	
+Regional:
+	load balancing of any traffic (TCP, UDP)
+	supported on any port number 
+	
+Regiona internal:
+	load balancing of traffic inside a VPC 
+	use for the internal tiers of multi-tier applications 
+	
+
+	COMPARING INTERCONNECT OPTIONS
+	
+VPN: secure multi-Gbps connection over VPN tunnels 
+
+Dirent Peering: private connection between you and Google for your hybrid cloud workloads 
+
+Carrier Peering: connection through the largest partner network of service providers
+
+Dedicated Interconnect: Connect N x 10G transport circuits for private cloud traffic to Google Cloud at Google POPs 
+
+------------------------------------------------
+ESSENTIAL GOOGLE CLOUD INFRASTUCTURE - FUNDATION 
+
+IaaS								PaaS								SaaS
+CPUs, Memory			Servers				Clusters					Serverless 
+Disk, Interfaces		VM instances		Cluster Management 			Autoscaling
+IT Ops				SysOps			DevOps					LowOps			NoOps 
+
+LAB - creare un bucket
+
+da interfaccia grafica:
+Storage -> Create bucket
+specificare name (globally unique) e storage class 
+
+da Google Cloud Shell:
+> gsutil mb gs://<BUCKET_NAME> 
+mb=make bucket 
+> gsutil cp myfile.txt gs://<BUCKET_NAME> 
+
+> gcloud compute regions list 
+mostra tutte le region disponibili 
+
+> INFRACLASS_REGION=us-centra1
+> echo $INFRACLASS_REGION 
+
+> mk infraclass 
+> touch infraclass/config 
+> echo INFRACLASS_REGION=$INFRACLASS_REGION >> tilde/infraclass/config 
+> INFRACLASS_PROJECT_ID=myprojectid
+> echo INFRACLASS_PROJECT_ID >> tilde/infraclass/config
+
+> nano .profile
+
+
+
+	PROJECTS
+	
+Le risorse possono essere create ed utilizzate solo all'interno di un progetto.
+
+> gcloud config list
+
+> gcloud config list | grep project
+
+> export PROJECT_ID = project_id
+> gcloud config set project $PROJECT_ID
+
+
+	VIRTUAL NETWORKS: global instrastructure
+
+Regions with 3 zones , PoPs (point of presence), network,
+Edge point of presence 
+
+	VPC (virtual private cloud)
+VPC objects:
+- Projects
+- Networks (default, auto mode, custom mode)
+- Subnetworks
+- Regions 
+- Zones
+- IP addesses (internal, external, range)
+- Virtual machines (VMs)
+- Firewall rules
+
+A project:
+- Asosciates objects and services with billing
+- Contains networks (up to 5) that con be shared/peered
+
+A network:
+- has no IP address range
+- is global and spans all available regions 
+- contains subnetworks 
+- is available as default, auto or custom 
+
+	3 VPC network types:
+1- Default
+	every project
+	one subnet per region
+	default firewall rulse
+2- Auto Mode
+	default network
+	one subnet per region
+	regional IP allocation
+	fixed /20 subnetwork per region
+	expandable up to /16
+3- Custo Mode 
+	no default subnets created
+	full control of IP ranges
+	regional IP allocation
+	expandable to any RFC 1918 size 
+	
+You can conver Auto Mode network in Custom Mode network
+to take advantage of the control that customer networks provide.
+However, this conversion is one way, meaning that 
+Custom Networks cannot be changed to Auto Mode networks.
+
+VMs in the same network can communicate using their internal IP address,
+even though they are in different regions.
+
+VMs in different network must communicate using their external IP address,
+even though they are in the same region.
+The traffic isn't through the public internet,
+but it is going through the Google Edge routers.
+	
+	Google's VPC is global
+Possiamo comunicare con le VM presenti anche in differenti region,
+ma nella stessa Cloud VPC Network, passando attraverso lo stesso VPN Gateway.
+Questo riduce costi e complessità di gestione della rete.
+
+	Subnetworks cross zones
+VMs can be on the same subnet but in different zones.
+A single firewall rule can apply to both VMs.
+Because the region contains several zones,
+subnetworks can cross zones.
+
+subnet 10.0.0.0/20?
+.0 and .1 are reseved for the network in these subnets gateway respectively
+.2 and .3 are assigned to the VMs instances.
+
+Every subnet has 4 reserved IP addesses in its primary IP range.
+
+	Expand subnets without re-creating instances 
+
+Abbiamo un progetto che contiene una Network,
+nella Region A ci sono due subnet: 172.16/24 (2 VMs) e 10.128/16 (5 VMs)
+nella Region B c'è la subnet 10.130/16 (5 VMs)
+nella Region C c'è la subnet 10.132/16 (5 VMs) 
+
+Cannot overlap with other subnets 
+Must be inside the RFC 1918 address spaces 
+can expand but not shrink 
+Auto Mode can be expanded from /20 to /16 
+	per espandere ulteriormente dobbiamo passare a Custom Mode network.
+avoid large subnets.
+
+	How to Expand a Subnet
+	
+ho creato una subnet con /29 mask che contiene 8 indirizzi
+4 sono riservati da GCP, quindi abbiamo disponibili 4 IP per le VMs 
+
+proviamo a creare un'altra VM instance nella subnet, 
+otteniamo un errore.
+
+per espandere la subnet andiamo nella tab della subnet,
+selezioniamo edit e andiamo a modificare il campo
+IP address range da 10.0.0.0/29 a 10.0.0.0/23 
+
+quindi possiamo cliccare su Retry della VM che è fallita.
+
+Abbiamo espanso la maschera della subnet senza alcuno shutdown delle macchine già presenti.
+
+	VMs can have internal and external IP addresses
+	
+Internal IP
+	Allocated from subnet range to VMs by DHCP
+	DHCP lease is renewed every 24 hours
+	VM name + IP is registered with network-scoped DNS 
+
+External IP
+	Assigned from pool (ephemeral) default
+	Reserved (static) and billed more when not attached to a running VM 
+	VM doesn't know external IP, it is mapped to the internal IP 
+	
+When you create a VM in GCP, 
+it's symbolic name is registered with an internal DNS service 
+that translates the name to the internal IP addess.
+
+DNS is scoped to the network so it can translate web urls and VM names
+of hosts in the same network,
+but it can't translate host names from VMs in a different network.
+
+the external IP address is optional,
+you can assign an external IP address if your device or your machine 
+is externally facing.
+
+Contestualmente alla creazione di una VM,
+è possibile scegliere per il Primary Internal IP lo opzioni:
+Ephemeral (Automatic) e Ephemeral (Custom) e Reserve static internal IP address.
+Per quanto riguarda l' External IP address le opzioni sono:
+None e Ephemeral e Create IP address.
+
+
+	DNS resolution for internal addresses
+Each instance has a hostname that can be resolved to an internal IP address:
+- the hostname is the same as the instance name
+- FQDN is [hostname].[zone].c.[project_id].internal
+
+Example: my-server.us-central1-a.c.guestbook-151617.internal
+
+Name resolution is handled by internal DNS resolver:
+- provided as part of Compute Engine (169.254.169.254)
+- configured for use on instance via DHCP 
+- provides answer for internal and external addresses.
+
+	DNS resolution for external addresses
+Instances with external IP addresses can allow connections from hosts outside the project.
+	users connect directly using external IP address
+	admins can also publish public DNS records pointing to the instance.
+	public DNS records are not publishe automatically.
+DNS records for external addresses can be published using existing DNS servers (outside of GCP)
+DNS zones can be hosted using Cloud DNS.
+	
+	Host DNS zones using Cloud DNS
+Google's DNS service
+translate domain names into IP address
+low latency
+high availability (100% SLA)
+create and update millions of DNS records 
+UI, command line or API 
+
+	ALIAS IP RANGES
+	Assign a range of IP addresses as aliases to a VM's network interface using alias IP ranges
+	
+rete esterna alla VM: VM primary IP 10.1.0.2 - subnet: primary CIDR range 10.1.0.0/16
+rete interna alla VM: Container in VM, VM Alias IP range: 10.2.1.0/24 - subnet: secondary CIDR range 10.2.0.0/20
+
+
+	ROUTES ND FIREWALL RULES
+
+By default every network has:
+- routes that let instances in a network send traffic directly to each other, even across subnet.
+- a default route that directs packets to destinations that are outside the network 
+
+Firewall rules must also allow the packet. 
+
+Routes map taffic to destination networks 
+- apply to traffic egressing a VM (traffico in uscita)
+- forward traffic to most specifica route (inoltrare)
+- are created when a subnet is created.
+- enable VMs on same network to communicate 
+- destination is in CIDR notation 
+traffic is delivered only if it also matches a firewall rule.
+
+			VM Routing Table
+Internet: 	0.0.0.0/0
+VM 1 : 		192.168.5.0/24
+VM 2 e 3 : 	10.128.1.0/20
+...
+
+	Instance routing tables
+	
+vpngateway		10.100.0.0/16 -> default-route-78...
+				0.0.0.0/0 -> default-route-6807...
+
+vm1				10.100.0.0/16 -> default-route-78...
+				0.0.0.0/0 -> default-route-6807...
+				172.12.0.0/16 -> vpngateway 
+				
+vm2				10.100.0.0/16 -> default-route-78...
+				0.0.0.0/0 -> default-route-6807...
+				172.12.0.0/16 -> vpngateway 
+
+Each route in the routes collection may apply to one or more instances.
+A route applies to an instance if he network and instance tax match.
+If the network matches and there are no instance tax specified,
+the route applies to all instances in that network.
+Compute Engine uses the routes collection to create individual read-only table for each instance.
+
+Every virtual machine instance in the network is directly connected to this router
+and all packets leaving a virtual machine instance 
+our first handle at slayer before they are forwarded to the next stop(hop?).
+
+The original network router selects the next hop
+for a packet by consulting the routing table for that instance.
+
+	Firewall rules protect your VM instances from unapproved connections
+
+- VPC network functions as a distributed firewall 
+- firewall rules are applied to the network as a whole 
+- connections are allowed or denied at the instance level 
+- firewall rules are stateful (firewall rules allow bidirectional communication once a session is established)
+- impied deny all ingress and allow all egress by default.
+
+Firewall rules are applied between individual instances in the same network.
+
+	Routes map traffic to destination networks 
+
+Parameter		Details
+
+direction		Inbound connections are matched against ingress rules only
+				Outbound connections are matched against egress rules only 
+				
+source or		For the ingress direction, sources can be specified as part of the rule with IP addresses, source tags, or a source service account.
+destination 	For the egress direction, destinations can be specified as part of the rule with one or more ranges of IP addresses.
+
+protocol		Any rule can be stricted to apply to specifica protocols only or specifica combinations of protocols and ports only.
+and port 
+
+action			To allw or deny packets that match the direction, protocol, port, and source or destination of the rule.
+
+priority		Governs the order in which rules are evaluated, the first matching rule is applied.
+
+Rule assignment		All rules are assigned to all instances, but you can assign certain rules to certain instances only.
+
+	GCP firewall use case: Egress
+	
+Conditions:
+- destination CIDR ranges 
+- Protocols 
+- Ports 
+Actions:
+- Allow: permit the matching egress connection 
+- Deny: block the matching egress connection.
+
+	GCP firewall use case: Egress
+Conditions:
+- Source CIDR ranges
+- Protocols 
+- Ports 
+Actions:
+- Allow: permit the matching ingress connection 
+- Deny: block the matching ingress connection 
+
+
+LAB - create an Auto Mode VPC network with firewall rules and two VM instances,
+	then convert the Auto Mode network to a Custom Network and create other Custom Mode networks.
+
+Ogni progetto ha la default network,
+che ha una subnet per ogni differente region.
+Ogni subnet ha un IP addresses range e un Gateway IP.
+In VPC network, nella tab Routes possiamo esplorare la rules table.
+
+Nella tab Firewall rules cancelliamo tutte le rules presenti e 
+cancelliamo anche la default network.
+
+Verifichiamo che da Compute Engine non riusciamo 
+a creare una nuova VM senza la default network, 
+cioè senza alcuna network.
+
+Creiamo mynetwork di tipo Automatic Mode, con ip range /20 per ogni region.
+
+Le Firewall rules che vengono create in automatico sono:
+
+- mynetwork-allow-icmp 			ingress			apply to all	priority:65534
+- mynetwork-allow-internal		ingress			apply to all	priority:65534
+- mynetwork-allow-rdp			ingress			apply to all	priority:65534
+- mynetwork-allow-ssh			ingress			apply to all	priority:65534
+
+- mynetwork-deny-all-ingress	ingress			apply to all	priority:65535
+- mynetwork-allow-egress		egress			apply to all	priority:65535
+
+Le ultime due regole non sono deselezionabili, quindi vengono aggiunte di default alla nuova rete.
+Le prime 4 le aggiungiamo noi.
+
+Andiamo in Compute Engine e creiamo una VM nella network che abbiamo creato
+specificando una region e zone.
+
+Per ogni VM creata vediamo internal ed external IP address.
+Cliccando su (nic0) della riga della VM possiamo verificare la subnet in cui essa è creata,
+quindi verificare che il suo IP interno si trova nella maschera della subnet.
+
+Abbiamo 2 VM in due subnet della stessa network,
+dall'SSH di ciascuna VM riusciamo a fare il ping dell'altra utilizzando l'IP interno:
+> ping -c 3 10.132.0.2 
+oppure possiamo utilizzare il nome dell'istanza della VM:
+> ping -c 3 mynet-eu-vm 
+questo grazie al DNS, è importante perchè l'IP interno è effimero, cioè può cambiare al restart della VM.
+
+Il ping funziona anche con l'ip esterno, grazie alle impostazioni delle Firewall rules.
+
+Convertiamo la nostra network Auto Mode in una Custom Network.
+Entrare nella VPC network e andare in edit, è selezionato Auto, basta selezionare Custom e salvare.
+
+Creiamo una un'altra custom network.
+
+da Shell:
+
+> gcloud cmpute networks create networkName 
+	--subnet-mode=custom 
+	--project=projectid 
+	
+> gcloud compute networks subnets create subnetName 
+	--network=networkName 
+	--region=us-centra1 
+	--range=172.16.0.0/20 
+	--project=projectid 
+	
+> gcloud compute networks list 
+
+> gcloud compute networks subnets list 
+	--sort-by=NETWORK 
+
+Creiamo le Firewall rules:
+
+> gcloud compute firewall-rules create firewallRuleName
+	--direction=INGRESS 
+	--priority=1000 
+	--network=networkName 
+	--action=ALLOW 
+	--rules=tcp:22.tcp:389,icmp 
+	--source-ranges=0.0.0.0/0 
+	--project=projectId 
+	
+> gcloud compute firewall-rules list 
+	--sort-by=NETWORK 
+	
+> gcloud compute instances create vmName
+	--zone=us-centra1-c 
+	--machine-type=f1-micro 
+	--subnet=subnetName 
+	
+> gcloud compute instances list
+	--sort-by=ZONE 	
+	
+Andiamo a fare il ping con External IP addess 
+tra due VM nella stessa Zone ma in Network differenti:
+
+> ping -c 334.68.94.34 
+il ping funziona grazie alle impostazioni delle firewall rules.
+ovviamente, a maggior ragione il ping funziona tra vm nella stessa network.
+
+
+	INCREASED AVAILABILITY WITH MULTIPLE ZONES 
+IF your application needs increased availability 
+you can place two virtual machines into multiple zones,
+but within the same SUBnetwork.
+
+Using a single subnetwork allows you to create a firewall rule against the sub network.
+
+Per esempio possiamo avere 2 VM nella stessa region:us-west1 :
+	vm1 in zone:us-west-1a  10.2.0.2
+	vm2 in zone:us-west-1b  10.2.0.3
+sotto la stessa subnet 10.2.0.0/16
+Therefore, by allocating VMs on a single subnet to separate zones
+you get improved availability without additional security complexity.
+
+A regioal managed instance group contains instances from multiple zones 
+across the same region, which provides increased availability. 
+
+Questa configurazione conferisce isolamento per le infrastrutture,
+hardware e software failures. 
+
+	GLOBALIZATION WITH MULTIPLE REGIONS 
+Abbiamo due VM in differenti region, quindi in differenti subnet:
+	vm1 in zone:us-east-1a 10.2.0.4 in subnet:10.2.0.0/16
+	vm2 in zone:us-west-1b 192.168.0.2 in subnet:192.168.0.0 
+
+Putting resources in different regions, provides an even higher degree of failure independence,
+this allows you to design robust system with resources spread across different failure domains,
+when using a global Load Balancer, like HTTP Load Balancer, 
+you can route traffic to the region that is closest to the user.
+This can result in better latency for users and lower network traffic costs for your project.
+
+	GENERAL SECURITY BEST PRACTICE
+Only assign internal IP address to VM instances whenever is possible.
+
+Cloud NAT provides internet access to private instances (inside VPC)
+
+Cloud NAT does not implement INBOUND NAT:
+hosts outside your VPC network cannot directly access any of the private instances behind the cloud NAT Gateway.
+this help you keep your VPC networks isolated and secure.
+
+Private Google Access to Google APIs and services 
+
+similarly, you should enable Private Google Access 
+to allow VM instances that ONLY have IP addresses to reach the external IP
+of Google APIs and services.
+
+For example,
+if your private VM instances needs to access a Cloud Storage Bucket,
+you need to enable Private Google Access,
+
+Le VM, anche da regioni diverse si collegano allo stesso VPC Routing,
+il quale si collega all'Internet Gateway che è collegato ad Internet.
+Supponiamo ci siano nella region us-west1, 
+	subnet-a: Private Google Access ON
+	VM A1 con IP interno
+	VM A2 con IP interno ed esterno
+Nella region us-east1, 
+	subnet-b: Private Google Access OFF 
+	VM B1 con IP interno 
+	VM B2 con IP interno ed esterno
+	
+This allow VM A1 to access Google apps and services,
+even though it has no external IP address.
+Private Google Access has no effect on instances that have external IP addresses,
+that's why VMs A2 and B2 can access Google apps and services.
+The only VM that can't access those apps and services is VM B1,
+this VM has no public IP address and it is in a subnet where Google Private Access is disabled.
+
+LAB - Implement Private Google Access and Cloud NAT Gateway
+
+Creiamo una VM, una VPC Custom network con una subnet e le Firewall rules.
+Lasciamo Private Google Access disabilitato nelle impostazioni nella crezione della network.
+Creiamo le Firewall Rules, specificando la network, il Targets: All instances in the network,
+specifichiamo anche il Source IP ranges, Protocols and ports: tcp: 22,
+Infine creiamo la VM nella network che abbiamo precedentemente creato e dobbiamo specificare
+anche la subnet. 
+Per l'External IP address, possiamo scegliere tra le opzioni: None, Ephemeral, Create IP address,
+scegliamo l'opzione None.
+Entriamo in Cloud Shell,
+
+> gcloud config project myprojectid
+> gcloud compute ssh vmName
+	--zone us-centra1-c
+	--tunnel-through-iap
+> ping -c 2 www.google.com 
+this command is not working because the vm doen't have the external IP address.
+
+Possiamo utilizzare Private Google Access per raggiungere l'IP esterno di google.com 
+
+Creiamo un bucket da Google Storage
+torniamo in Cloud Shell e cerchiamo di raggiungere il buchet.
+Copiamo qualcosa nel bucket e cerchiamo di raggiungerla dalla VM.
+
+> gsutil cp gs://internal-url/img.svg gs://bucketName 
+> gsutil cp gs://bucketName/img.svg .
+
+torniamo nell'SSH della VM:
+> gcloud compute ssh vm-internal 
+	--zone us-central1-c --tunnel-through-iap 
+> gsutil cp gs://bucketName/img.svg .
+it doesn't working
+
+Andiamo in VPC networks, la nostra network 'privatenet',
+entriamo nella scheda della sua subnetwork ed andiamo in edit,
+modifichiamo il flag Private Google access da Off ad On 
+Adesso il comando 
+> gsutil cp gs://bucketName/img.svg .
+dalla ssh della vm funziona!
+
+	Gonfigurare Cloud NAT Gateway
+per accedere ad internet dalla vm sprovvista di external IP address
+
+con il comando exit usciamo dall'ssh della vm e torniamo nella Cloud Shell.
+> exit
+> sudo apt-get update 
+> gcloud compute ssh vm-internal 
+	--zone us-central1-c --tunnel-through-iap 
+> sudo apt-get update 
+il comando ovviamente non funziona, perchè la vm non ha accesso ad internet.
+
+Andiamo in Netowork services -> Cloud NAT 
+Create a NAT Gateway,
+Gateway name: nat-config, VPC network: privatenet(la nostra network)
+Region:us-centra1
+Cloud Router: create 
+NAT mapping possiamo assegnare un IP statico, ma lasciamo i valori di default.
+
+Riproviamo il comando sudo dall'ssh della vm:
+> sudo apt-get update 
+adesso il comando funziona!
+
+
+	VIRTUAL MACHINE 
+
+GCP compute and processing options 
+
+	COMPARING COMPUTE OPTIONS
+
+Compute Engine:
+	language support: any
+	service model: IaaS
+	scaling: server autoscaling 
+	use cases: general computing workloads
+	
+Kubernetes Engine:
+	language support: any
+	service model: Hybrid (IaaS and PaaS) 
+	scaling: cluster 
+	use cases: container-based workloads
+	
+App Engine Standard:
+	language support: Python, Node.js, Go, Java, PHP.
+	service model: PaaS
+	scaling: autoscaling managed servers 
+	use cases: web and mobile and backend scalable applications
+	
+App Engine Flexible:
+	language support: Python, Node.js, Go, Java, PHP, Ruby, .NET, Custom Runtimes.
+	service model: PaaS
+	scaling: autoscaling managed servers 
+	use cases: web and mobile applications; container-based workloads
+	
+Cloud Functions:
+	language support: Python, Node.js, Go 
+	usage model: microservices architecture 
+	scaling: serverless 
+	use case: lightweight event actions.
+
+	Compute Engine:
+Infrastructure as a Service (IaaS)
+
+Predefined or custom machine types:
+- vCPUs(cores) and Memory(RAM) 
+- Persistent disks: HDD, SSD, Local SSD 
+- Networking 
+- Linux or Windows 
+
+Compute Engine features:
+
+Instance metadata 
+Strartuo scripts 
+
+Machine rightsizing:
+- recommentation engine for optimum machine size 
+- Stackdrivers statistics 
+- New recommendation 24hrs after VM create or resize 
+
+Global load balancing:
+- Multiple regions for availability 
+
+Availability policies:
+- Live migrate 
+- Auto restart 
+
+Per-second billing 
+Sustained use discount 
+Committed use discounts 
+
+Preemptible:
+- Up to 80% discount 
+- No SLA 
+
+Several Machine types:
+- Network throughtput scales 2 Gbps per vCPU (small exceptions)
+- Theoretical max of 32 Gbps with 16 vCPU or 
+					100 Gbps with T4 or V100 GPUs.
+A vCPU is equals to 1 hardware hyper-thread.
+
+Disks:
+- Standard, SSD, or Local SSD 
+- Standard and SSD PDs scale in performance for each GB of space allocated.
+Resize disks or migrate instances with no downtime.
+
+Networking:
+Robust networking features 
+- Default, custom networks 
+- Inbound/outbound firewall rules 
+	. IP based
+	. Instance/group tags 
+- Regional HTTPS load balancing 
+- Network load balancing 
+	. Does not require pre-warming
+- Global and multi-regional subnetworks.
+
+Create a VM
+Compute Engine -> Create 
+specificare nome, regione, zone, machine type, 
+	Boot disk (immagine, dimensione, tipologia, anche più di uno)
+	Identity and API access, 
+	networking
+
+	VM access 
+Linux:
+	- SSH from GCP Console or CloudShell via Cloud SDK 
+	- SSH from computer or third-party client and generate key pair 
+	- Requires firewall rule to allow tcp:22 (not required in default network)
+Windows: RDP
+	- RDP clients 
+	- Powershell terminal 
+	- Requires setting the Windows password 
+	- Requires firewall rule to allow tcp:3389 (not required in default network)
+	
+	VM lifecycle
+1. Provisioning <-> Restart
+	- Virtual CPUs + Memory
+	- Root disk and Persisten disk 
+	- Additional disks 
+2. Staging
+	- IP addresses (internal and external) (Virtual Private Cloud) 
+	- System Image (Cloud Storage)
+	- Boot 
+3. Running <-> Reset
+	- Startup Script <-> set/get metadata 
+	- Access SSH | RDP 
+	- Modify Use <-> 	Export system image 
+						Snapshot persistent disk 
+						Move VM to different zone 
+	- Live migrate
+4. Stopping 
+	- Shutdown Script 
+	- Terminated
+		. Delete
+		. Availability Policy 
+
+Changing VM state from running:
+reset
+	from console, gcloud, API, OS 
+	state: remains running 
+restart
+	from console, gcloud, API, OS 
+	state: terminated -> running 
+reboot
+	from: OS:sudo reboot 
+	state: running -> running 
+stop 
+	from: console, gcloud, API 
+	state: running -> terminated 
+shutdown 
+	from: OS:sudo shutdown 
+	state: running -> terminated 
+delete 
+	from: console, gcloud, API 
+	state: running -> N/A 
+preemption
+	method: automatic 
+	state: N/A 
+	
+	Availability policy: Automatic changes
+	Called "scheduling options" in SDK/API 
+
+Automatic restart 
+	automatic VM restart due to crash or maintenance event
+	not preemption or a user-initiated terminate 
+On host maintenance 
+	determines whether host is live-migrated or terminated due to a maintenance event.
+	Live migration is the default.
+Live migration 
+	during maintenance event, VM is migrated to different hardware without interruption
+	metadata indicates occurrence of live migration.
+
+	Stopped (Terminated) VM 
+when a VM is terminated:
+No charge for stopped VM
+	charged for attached disks and IPs 
+Actions:
+	change the machine type
+	migrate the VM instance to another network 
+	add or remove attached disks, change auto-delete settings 
+	modify instance tags 
+	modify custo VM or project-wide metadata 
+	remove or set a new static IP 
+	modify VM availability policy
+	can't change the image of a stopped VM 
+Not all of the actions listed here require you to stop a virtual machine.
+For example: VM availability policy can be changed while the VM is running.
+
+LAB - Creating Virtual Machines 
+	
+Compute Engine -> Create 
+	Name: utility-vm,
+	Region us-central1 and zone us-centra1-c
+Andando in edit, nella VM possiamo verificare le impostazioni
+modificabili mentre la VM è running.
+
+Per le VM linux in SSH:
+> free			per vedere lo spazio libero e altre info 
+> sudo dmidecode -t 17 		per vedere info sulla RAM 
+> nproc 		numero processori
+> lscpu			info sui processori 
+
+Abbiamo tre opzioni per creare e configurare le VM:
+1- console.google.com 
+2- command line including Cloud Shell 
+	> gcloud compute instances create vmName 
+2- RESTful API 
+	
+	Machine types
+
+Predefined machine types: 
+	Ratio of GB of memory per vCPU 
+	- standard 
+	- high-memory 
+	- high-cpu 
+	- memory-optimized 
+	- compute-optimized 
+	- shared-core 
+
+Custom machine types:
+	- you specify the amount of memory and number of vCPUs. 
+creating custom machine types:
+when to select custom:
+- requirements fit between the predefined types 
+- need more memory or more CPU 
+customize the amount of memory and vCPU for your machine:
+- either 1vCPU or even number of vCPU 
+- 0.9 GB per vCPU, up to 6.5 GB per vCPU (default) 
+- total memory must be multiple of 256 MB 
+choose region and zone.
+
+Pricing:
+- per-second billing, with minimum of 1 minute 
+	vCPUs, GPUs, and GB of memory 
+- resource-based pricing 
+	each vCPU and each GB of memory is billed separately 
+- discoounts 
+	. sustained use 
+	. committed use 
+	. preemptible VM instances 
+- recommendation engine 
+	notifies you of underutilized instances 
+- free usage limits
+
+Preemptible VM (for batch processing):
+- lower price for interruptible service (up to 80%)
+- VM might be terminated ad any time 
+	no hcarge if terminated in the first minute 
+	24 hours max 
+	30-second terminate warning, but not guaranteed (time for a shutdown script)
+- no live migrate, no autorestart 
+- you can request that CPU quota for a region be split between regular and preemption 
+	default: preemptible VMs count against region CPU quota. 
+
+
+	SOLE-TENANT NODES PHYSICALLY ISOLATE WORKLOADS 
+
+Normal host vs Sole tenant host.
+
+A sole-tenant node is a physical compute engine server 
+that is dedicated to hosting VM instances only for your specific project,
+you sold tennant nodes to keep your instances physically 
+separated from instances in other projects or to group your instances 
+together on the same host hardware.
+For example, if you have a payment processing workload that needs 
+to be isolated to meet compliance requirements.
+
+	SHIELDED VMs OFFER VERIFIABLE INTEGRITY 
+- secure boot 
+- virtual trusted platform module (vTPM)
+- integrity monitorin 
+Requires shielded image.
+
+	IMAGES 
+When creating a Virtua Machine,
+you can choose the boot disk image.
+This image includes: 
+- boot loader 
+- operating system 
+- file system structure 
+- software 
+- customizations 
+
+You can select:
+- Public base images 
+	. Google, third-party vendors, and community; Premim images(=p) 
+	. Linux (CentOS, CoreOS, Debian, RHEL(p), SUSE(p), Ubuntu, openSUSE, FreeBSD.
+	.Windows
+		Windows Server 2019(p), 2016(p), 2012-r2(p) 
+		SQL Server pre-installed on Windows(p) 
+- CUstom images 
+	. Create new image from VM: pre-configured and installed SW 
+	. Import from in-prem, workstation, or another cloud 
+	. Management features: image sharing, image family, deprecation 
+
+
+	MACHINE IMAGES (when machine images can be used) 
+
+SCENARIOS				MACHINE  		PERSISTENT 		CUSTOM IMAGE 	INSTANCE 
+						IMAGE			DISK SNAPSHOT					TEMPLATE 
+
+Single disk backup 		yes 			yes 			yes				no 
+Multiple disk backup 	yes 			no 				no				no 
+Differential backup 	yes 			yes 			no 				no 
+Instance cloning 		yes 			no 				yes 			yes 
+	and replication 
+VM instance				yes 			no 				no 				yes 
+	configuration
+
+	DISK OPTIONS 
+Boot disk:
+- VM comes with a single root persistent disk. 
+- Image is loaded onto root disk during first boot:
+	Bootable: you can attach to a VM and boot from it.
+	Durable: can survive VM terminate.
+- Some OS images are customized for Compute Engine.
+- Can survive VM deletion if "Delete boot disk when instance is deleted" is disabled.
+
+	PERSISTENT DISKS 
+Network storage appearing as a block device:
+- attached to a VM through the network interface 
+- durable storage: can survive VM terminate 
+- bootable: you can attach to a VM and boot from it 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
