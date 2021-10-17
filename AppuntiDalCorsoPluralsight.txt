@@ -1875,6 +1875,281 @@ Al restart troveremo la stessa configurazione.
 
 That's the end of the laaaaab!
 
+-------------------------------------------------------------
+ESSENTIAL GOOGLE CLOUD INFRASTRUCTURE: CORE SERVICES
+
+
+	CLOUD IDENTITY AND ACCESS MANAGEMENT ( CLOUD IAM )	
+
+IAM is a way of identifying who can do what on which resource.
+
+WHO: person, group, application
+
+WHAT: refers to specific privileges or actions 
+
+RESOURCES: any Google Cloud service
+
+	Cloud IAM objects:
+
+Organization, Folders, Projects, Resources, Roles, Members.
+
+Cloud IAM policies:
+- a policy consists of a list of bindings
+- a binding binds a list of members to a role.
+
+Cloud IAM resource hierarchy 
+
+Organization > Folders > Projects > Resources 
+
+Each resource has exactly one parent.
+L'organizzazione può rappresentare l'azienda,
+i Folder rappresentano i dipartimenti, 
+
+A Policy is a cllection of access statements attached to a resource.
+Each policy contains a set of roles and role members.
+Resources inheriting plicies from their parent.
+
+Resource policies are union of parent and resource,
+where a less restrictive parent policy will always override a more restrictive resource policy
+
+The Cloud IAM policy hierarchy always follows the same path 
+as the Google Cloud resource hierarchy,
+which means that if you chiange the resource hierarchy
+the policy hierarchy also changes.
+
+For example,
+moving a project into a different organizzation
+will update the projects Cloud IAM policy to inherit from the new organization Cloud IAM policy.
+
+Also child policies cannot restrict access granted at the parent level. 
+
+For example,
+if we grant you the editor role for department X
+and we grant you the viewer role at the bookshelf project level,
+you still hav the editor role for that project.
+Therefore it is a best practive to follow the principle of
+least privilege.
+The principle applies to identities, roles and resources
+always select the smallest scope that is necessary for the task, in order to reduce your exposure to risk.
+
+	Organization Policies
+
+An organization policy is:
+- A configuration of restrictions 
+- defined by configuring a contraint with desired restrictions 
+- applied to the organization node, folders or project,
+descendants of the targeted resourcehierarchy node inherit policy orgatization
+that's been applied to their parents,
+
+Exceptions to these policies can be made,
+but only if the user ha the organization policy admin role.
+
+	IAM Conditions
+
+IAM conditions allow you to define and enforce conditional attribute based access control for Google Cloud Resources.
+With IAM conditions you can choose to grant resource access to identities members 
+if configured conditions are met.
+For example,
+this can be done by configuring temporary access for users
+in the event of a production issue or
+to limit access to resources only for employe's making request from your corporate office. 
+Conditions are specified in the role bindings of a resource IAM policy.
+When a condition exists, the access request is only granted
+if the condition expression evaluates to true. 
+Each condition expression is defined as a set of logic statements,
+allowing you to specify one ore more attributes to check.
+
+Enforce conditional, attribute-based access control for Google Cloud resources.
+- Grant resource access to identities (members) only 
+	if configured conditions are met.
+- Specified in the role bindings of a resource's IAM policy.
+
+	 Organization node
+
+- An organization node is a root node for Google Cloud resources
+- Organizarion roles:
+	. Organization Admin:
+		Control over all cloud resources, useful for auditing.
+	. Project Creator:
+		Controls project creation, control over who can create projects.
+
+	Creating and managing organizations
+
+- Created when a Google Workspace or Cloud Identity account creates a Google Cloud Project
+
+- Workspace or Cloud Identity super administrator:
+	. Assign the Organization admin role to some users
+	. Be the point of contact in case of recovery issues
+	. Control the lifecycle of the Workspace or Cloud Identity account and Organization resource
+
+- Organization admin:
+	. Define IAM policies
+	. Determine the structure of the resources hierarchy
+	. Delegate responsibility over critical componenets such as Networking, Billing, Resource Hierarchy 
+		through IAM roles.
+
+	Folders
+
+	Additional grouping mechanism and isolation boundaries between projects:
+	- Differente legal entities
+	- Departments
+	- Teams
+	Folders allow delegation of administration rights.
+
+	Resource manager roles:
+
+	- Organization:
+		. Admin: Full control over all resources
+		. Viewer: View access to all resources
+	- Folder:
+		. Admin: Full control over folders
+		. Creator: Browse hierarchy and create folders
+		. Viewer: view folders and projects below a resource
+	- Project:
+		. Creator: Create new projects (automatic owner) and 
+			migrate new projects into organization
+		. Deleter: Delete projects
+
+
+
+	Roles:
+	- Basic role
+	- Predefined role
+	- Custom role
+
+++IAM basic roles apply across all Google Cloud services in a project
+	can do what on all resources
+
+IAM basic roles offer fixed, coarse-grained levels of access:
+
+- Owner role (includes Editor role and Viewer role)
+	. invite members
+	. remove members
+	. delete projects
+- Editor role (includes Viewer role)
+	. deploy applications
+	. modify code
+	. configure services
+- Viewer
+	. read-only access
+
+- Billing Administrator
+	. manage billing
+	. add and remove administrators
+
+++IAM predefined roles apply to a particular GCP service in a project
+	can do what on Compute Engine resources in this projects, or folder, or org
+
+IAM predefined roles offer more fine-grained permissions 
+	on a particular services
+
+	Google Group
+		InstanceAdmin Role -> List of Permissions
+			project_a
+
+List of Permissions:
+	compute.instances.delete
+	compute.instances.get
+	compute.instances.list
+	compute.instances.setMachineType
+	compute.instances.start
+	compute.instances.stop
+
+	Compute Engine IAM roles
+Compute Engine has serveral predefined IAM roles:
+
+Compute Admin:		Full control of all Compute Engine resources (compute.*), 
+		which means that every action for any type of compute engine resource is permitted.
+Network Admin: 		Permissions to create, modify and delete neworking resources,
+		except for firewall rules and SSL certificates.
+Storage Admin:		Permissions to create, modify and delete disks, images and snapshots.
+
+++IAM custom roles let you define a precise set of permissions
+
+	Google Group
+		Instance Operator Role -> Listo of Permissions
+			project_b
+
+List of Permissions:
+	compute.instances.get
+	compute.instances.list
+	compute.instances.start
+	compute.instances.stop
+
+
+	How to create a Custo Role in GCP
+
+create an instance operator role that allows some users
+to start and stop Compute Engine Virtual Machines,
+but not reconfigure them.
+
+From GCP Console -> IAM & admins -> Roles -> 
+ select "Access Approval Config Editor" 
+ 	in the right panel you can see the assigned permissions,
+ click "Create Rome From Selection"
+ or click "Create Role"
+
+ Let's click "Create Role"
+ name: Instance Operator
+ description: create on current date
+
+ ID: CustomRole
+ Role launch stage: Alpha, Beta, General Availability, Disabled (choose Alpha)
+ +Add permissions: compute.instances.get, compute.instances.list, compute.instances.resume, compute.instances.reset,compute.instances.start, compute.instances.stop, compute.instances.suspend
+
+ Create!
+
+
+
+
+ Members defines the who part 
+of who can do wht on which resource
+
+There are 5 different types of Members:
+1- Google Account
+2- Service Account
+3- Google Group
+4- Gsuite Domain
+5- Cloud Identity Domain
+
+Google Account represents a developer and administrator or
+any other person who interacts with the GCP.
+Any email address that is assoicated with a Google Account can be an identity including gmail.com or other domains.
+New users can sign uo for a Google Account by going to the Google Account sign up pag without receiving mail through gmail.
+
+A Service Account is an account that belongs to your application instaad of to an individual end user.
+When you run code that is hosted on GCP,
+you specify the account that the code should run as,
+you can create as many service accounts as needed to represent the different logical components of your application.
+
+A Google Group is a named collection of Google Accounts and Service Accounts,
+every group has a unique email address that is associated with the group.
+Google Groups are a convenient way to apply an access policy to a collection of users,
+you can grant and change access controls for a whole group at once, instead of granting or changing access controls one at a time 
+for indivifual users or service accounts.
+
+G Suite domains represent your organization's internet domain name,
+such as example.com.
+And when you add a user to your G Suite domain, 
+a new Google Account is created for the user inside this virtual group, souch as username@example.com.
+
+GCP customer who are not G Suite customers can get these same capabilities through Cloud Identity.
+Cloud Identity lets you manage users and groups using the Google admin console,
+but you do not pay for or receive G Suite Collaboration products such as Gmail, Docs, Drive and Calendar.
+Cloud Identity is available in free and premim editions.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
