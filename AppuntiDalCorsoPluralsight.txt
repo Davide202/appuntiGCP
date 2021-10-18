@@ -2136,22 +2136,252 @@ a new Google Account is created for the user inside this virtual group, souch as
 GCP customer who are not G Suite customers can get these same capabilities through Cloud Identity.
 Cloud Identity lets you manage users and groups using the Google admin console,
 but you do not pay for or receive G Suite Collaboration products such as Gmail, Docs, Drive and Calendar.
-Cloud Identity is available in free and premim editions.
+Cloud Identity is available in free and premium editions.
+
+The Premium edition adds capabilities for mobile device management,
+you cannot use Cloud IAM to create or manage your user or groups
+in stead you can use Cloud Identity or Gsuite to create and manage users.
+
+		Using Google Cloud Directory Sync
+your administrators can log in and manage GCP resources 
+using the same user names and passwords they already use.
+This tool synchronizes users and groups from your existing active directory
+or held up system with the users and groups in your Cloud Identity domain. 
+The synchronization in one way only,
+which means that no information in your active directory or held
+at map is modified. 
+Google Cloud directory is designed to run scheduled synchronizationwithout supervision, 
+after its synchronization rules are set up.
+
+What if I already have a different corporate directory?
+
+Microsoft Active 						Google Cloud
+Directory or LDAP 					Directory Sync 						Users and groups in your 
+										----------------------------->>> 	Cloud Identity domain
+Users and groups in 		scheduled one-way sync
+your existing 
+directory service
 
 
+	Single sign-on (SSO)
+GCP also provide single sign on authentication.
+- Use Cloud Identity to configure SAML SSO
+- If SAML2 isn't supported, use a third-party solution (ADFS, Pin, or Okta)
 
+IF you have your identity system,
+you can continue using your own system and processes with
+SSO configured, when user authentication is required
+Google will redirect to your system.
 
+If the user is authenticated in your system,
+access to Google Cloud Platform is given.
+Otherwise the user is prompted to sign in.
+This allow you to also revoke access to GCP, 
+if your existing authentication system supports SAML to SSO configuration
+is as simple as three links and a certificate.
+Otherwise you can use a third party solution like ADFS, Ping or Okta.
 
+If you want to use a Google Account but are not interested
+in receiving mail through Gmail,
+you can still create an account without gmail.
 
+	Service Account
+Service accounts provide an identity for carrying out
+server-to-server interactions
 
+- Programs running within Compute Engine instances can automatically acquire access tokens with credentials.
+- Tokens are used to access any service API in your project and any other services that granted access to that service account.
+- Service accounts are convenient when you're not accessing user data.
 
+For example,
+if you write an application taht interacts with Google Cloud Storage,
+you must first authenticate either Google Cloud Storage 
+XML API or JSON API.
+You can enable Service Accounts and grant read-write access to
+the account on the instance where you plan to run your application.
+Then program the application to obtain credentials from the Service Account.
+Your application authenticates seamlessly to the API 
+without embedding any secret keys or credentials in your instance image or application code. 
 
+Service accounts are identified by an email address
+- 123455555556-compute@project.gserviceaccount.com
+- Three types of service accounts:
+	- User-created (custom)
+	- Built-in
+		Compute Engine and App Engine default service accounts
+	- Google APIs service account
+		Runs internal Google processes on your behalf.
 
+By default, all projects come with a built-in Compute Engine,
+default Service Account.
 
+Apart from the default Service Account,
+all projects come with a Google Cloud APIs Service Account,
+identifiable by 
+the email project - number @ Cloud Services . G Service Account .com
+this is an account designed specifically to run internal Google Processes 
+on your behalf and is automatically granted the editor role on the project.
 
+Alternatively,
+you can also start an instance with a Custom Service Account,
+that provide more flexibility tham the Default Service Account,
+but they require more management from you.
+You can create many service accounts as you need, 
+sign any arbitrary access scopes or Cloud IAM roles to them
+and assigne the service accounts to any virtual machine instance.
 
+	Default Compute Engine Service Account
 
+- Automatically created per project with auto-generated name and email address:
+	name has -compute suffix
+	56478103875151-compute@developer.gserviceaccount.com
+- Automatically added as a project Editor
+- By default, enabled on all instances created using gcloud or Cloud Console
 
+You can override this behavior by specifing another service account
+or by disabling service accounts for the instance.
+
+	Scopes
+
+Authorization is the process of determining
+what permissions an auhenticated identity has
+on a set of specified resources.
+Scopes are used to determine whether an authenticated identity
+is authorized.
+
+Each application contais authenticated identities or service account.
+If the application want to use a Cloud Storage bucket.
+They each request access from the Google Authorization Server, 
+and in return they receive an access token.
+Each application receives an access token with a specific scope.
+
+	Customizing scopes of a VM
+- Scopes can be changed after an instance is created
+- For user-created service accounts, use Cloud IAM reles instead.
+
+Scope can be customized when you create an instance
+using the default Service Account.
+Access scopes are actually a legacy method of specifying permissions for your VM.
+Before the existence of IAM roles access scopes were 
+the only mechanism for granting permissions to service accounts.
+For user created Service Accounts use Cloud IAM roles instead
+to specify permissions.
+
+	Service account permissions
+- Default Service Accounts: basic and predefined roles
+- User-created Service Accounts: predefined roles
+- Roles for service accounts can be assigned to groups or users
+
+First you create a Service Account that has 
+the InstanceAdmin Role,
+which has some permissions to create, modify and delete 
+Virtual Machine instances and disks.
+Then you treat the Service Account as a resource and
+decide who can use it by provsioning users or a group
+with the Service Account user role.
+This allows those users to act as that Service Account 
+to create, modify and delete Virtual Machine instances and disks.
+Users who are Service Account users for a Service Account
+can access all of the resources that the Service Account has access to.
+Therefore be cautious form granting the Service Account user role
+to a user or group.
+
+	Example: Service Accounts and Cloud IAM
+
+- in project_a there are component_1 and component_2
+- VMs running component_1 are granted Editor access 
+	to project_b using Service Account_1
+- VMs running component_2 are granted ObjectViewer access to
+	bucket_1(inside project_a) using Service Account_2
+- Service account permissions can be changed without re-created VMs.
+
+Essentially, Cloud IAM lets you slice up a project
+into different microservices, each when access to different
+resources by creating service accounts to represent each one.
+You assign the Service Accounts to the VMs when they are created
+and you don't need to ensure the credentials have been 
+managed correctly because Google Cloud manages security 
+for you.
+
+	There are two types of Google Service Accounts:
+1- Google-managed service accounts:
+	. all service accounts have Google-managed keys
+	. Google stores both the public and private portion of the key
+	. each public key can be used for signing for a maximum of two weeks
+	. private keys are never directly accessible
+
+2- User-managed service accounts:
+	. Google only stores the public portion of a user-managed key
+	. users are responsible for private key security
+	. can create up to 10 user-managed service account keys per service
+	. can be administered via Cloud IAM API, gcloud, or the Console.
+
+Keeping your user-managed keys safe is vital
+and is the creator's responsibility.
+Remember: Google does not save your user-managed private keys,
+if you lose them, Google cannot help you recover them.
+And also you are responsible for performing KEY ROTATION.
+
+User managed keys should be used as a last resort.
+Consider the other alternatives,
+such as Short Lived Service Account credentials, tokens 
+or Service Account impersonation.
+
+	Use the "gcloud" command-line tool to quickly list
+		all of the keys associated with a Service Account:
+> gcloud iam service-accounts keys list
+		--iam-ccount user@email.com
+
+		Cloud IAM best practices
+
+1- Leverage and understand the resource hierarchy
+	- use projects to group resources that share the same trust bundary
+	- check the policy granted on each resource and make sure you understand the inheritance
+	- use "principles of least privilege" when granting rols
+	- audit policies in Cloud audit logs: setiampolicy
+	- audit membership of groups used in policies 
+
+2- Grant roles to Google groups instead if individuals
+	- update group membership instead of changing Cloud IAM policy
+	- audit membership of groups used in policies
+	- control the ownership of the Google group used in Cloud IAM policies
+
+	Example:
+_______________
+|Network 			|			-> Group_1 needing view_only role to a Cloud Storage bucket
+|Admin Group 	|			-> Group_2 needing read_ony role to a Cloud Storage bucket
+_______________
+
+Therefore groups are not only associated with job roles
+but can exist for the purpose of role assignment.
+
+3- Service Accounts
+	- Be very careful granting "serviceAccountUser" role
+		because it provides access to all resources of the service account has access to
+	- when you create a service account, give it a display name
+		that clearly identifies its purpose
+	- establish a naming convention for service accounts
+	- establish key rotation policies and methods
+	- audi with "serviceAccount.keys.list()" method 
+
+4- Cloud Identity-Aware Proxy (Cloud IAP)
+	enforce access control policies for applications and resources:
+	- identity-based access control
+	- central authorization layes for applications accessed by HTTPPS
+	Cloud IAM policy is applied after authentication.
+
+--------------------------------------
+					_______________________
+					|			IDENTITY 				|GCP
+					|				|							|
+					|				V 						|
+Users  ---|--> 	 IAP 	-> 	ERP 	|
+					|						->	CRM 	|
+					|											|
+					_______________________
+---------------------------------------
+Cloud IAP lets you establish a central authorization layer 
+for applications access by HTTPS
 
 
 
