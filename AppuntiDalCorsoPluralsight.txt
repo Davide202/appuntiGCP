@@ -2381,7 +2381,295 @@ Users  ---|--> 	 IAP 	-> 	ERP 	|
 					_______________________
 ---------------------------------------
 Cloud IAP lets you establish a central authorization layer 
-for applications access by HTTPS
+for applications access by HTTPS,
+so you can use an application level access control model,
+instead of relying on network level firewalls.
+
+Applications and resources protected by Cloud IAP
+can only be accessed through the proxy by users and groups
+with the correct Cloud IAM role.
+When you grant a user access to an application ore resources by Cloud IAP,
+thes're subject to the fine grained access controls 
+implemented by the product in use without requiring a VPN.
+
+Cloud IAP performs authentication and authorizaton checks,
+when a user tries to access a Cloud IAP secured resource.
+
+
+LAB - Cloud IAM 
+
+Abbiamo due utenti, con due username.
+Facciamo quindi il login in due tab diverse con i due diversi account.
+
+In username_1 tab, 
+	IAM & admin -> IAM 
+	roles: 	App Engine Admin
+					BigQuery Admin
+					Edior
+					Owner
+					Viewer
+
+	Cloud Storage -> Storage -> create bucket with project_id
+	upload file
+	rename: sample.txt
+
+
+In username_2tab, 
+	IAM & admin -> IAM 
+	roles: 	Viewer
+
+	Cloud Storage -> Storage -> Browser 
+	verifichiamo la visibilità del bucket creato con username_1 e del suo file all'interno
+
+
+Rimuoviamo il "project viewer role" per lo username_2
+In username_1 tab, 
+	IAM & admin -> IAM -> edit username_2
+	remove the role and save
+
+entrando come username_2 non vedremo più il bucket.
+
+Adesso concediamo a username_2 il ruolo: Storage Object Viewer
+
+Dalla Shell di username_2:
+
+> gsutil ls gs://bucketname
+
+---
+In username_1 tab, 
+	IAM & admin -> Service Accounts -> create
+name: read-bucket-objects
+role: Storage Object Viewer
+
+	IAM & admin -> IAM
+selezioniamo il Service Account creato
+e clicchiamo su +ADD
+consideriamo l'esempio
+New members: altostrat.com
+role: Service Account User
+
++ADD
+consideriamo l'esempio
+New members: altostrat.com
+role: Compute Engine - Compute instance admin v1
+
+Creiamo una VM con il Service Account appena creato.
+
+Dall'SSH della VM:
+
+> gcloud compute instances list
+	
+> gsutil cp gs://bucketname/sample.txt
+> mv sample.txt sample2.txt 
+> gsutil cp sample2.txt gs://bucketname
+
+
+--------------------------------------------------------
+
+		STORAGE AND DATABASE SERVICES
+
+Unstructured data:
+	Object:	Cloud Storage 
+		good for binary or object data
+		such as images, media serving, backups
+	File: Filestore 
+		file system
+		good for: network attached storage (NAS)
+		such as latency sensitive workloads
+
+Relational:	
+	Cloud SQL 
+		good for web frameworks
+		such as CMS, ecommerce
+	Cloud Spaner
+		horizonal scalability
+		good for RDBMS + scale, HA, HTAP
+		such as user metadata, Ad/Fin/MarTech
+
+Non-relational
+	Firestore
+		good for hierarchical, mobile, web
+		such as user profiles, game state
+	Cloud Bigtable
+		analytics
+		update and low latency
+		good for heavy read + write, events
+		such as financial, IoT
+
+Warehouse: BigQuery 
+	analytics
+	good for enterprise data warehouse
+	souch as analytics, dashboards
+
+	Scope
+
+Infrastucture Track
+- Service differentiators
+- when to consider using each service
+- set uo and connect to a service
+
+Data Engineering Track
+- How to use a database system
+- Design, organization, structure, schema,
+	and use for an application
+- Details about how a service stores and retrieves
+	structured data
+
+Cloud Storage is an object storage service
+- website content
+- storing data for archiving and disaster recovery
+- distribuiting large data objects to users via direct download
+
+Cloud Storae key features
+- Scalable to exabytes
+- Time to first byte in milliseconds
+- Very high availability across all storage classes
+- Single API across storage classes 
+
+Cloud Storage is not a File System
+instead it is a collection of buckets that you place objects into.
+
+Classes:
+
+Standard
+	- use cases: frequently access, most expensive, hot data and or stored for only bief periods of time like data-intensive computations
+	- minimum storage duration: none
+	- retrieval cost: none
+	- availability SLA: 99.95%(multi/dual) 99.90%(region)
+	- durability: 99.999%
+
+Nearline
+	read less than once per 30 days
+	- use cases: infrequently accessed data like data backup, long-tail multimedia content, and data archiving
+	- minimum storage duration: 30 days 
+	- retrieval cost: $0.01 per GB 
+	- availability SLA: 99.90%(multi/dual) 99.00%(region)
+	- durability: 99.999%
+
+Coldline
+	read less than once per 90 days
+	- use cases: infrequently accessed data that you read or modify at most once a quarter 
+	- minimum storage duration: 90 days 
+	- retrieval cost: $0.02 per GB 
+	- availability SLA: 99.90%(multi/dual) 99.00%(region)
+	- durability: 99.999%
+
+Archieve
+	read less than once per year
+	- use cases: Data archiving, online backup, and disaster recovery 
+	- minimum storage duration: 365 days 
+	- retrieval cost: $0.05 per GB 
+	- availability SLA: None
+	- durability: 99.999%
+
+Choose a regional class to help optimize latency
+and network bandwidth for data consumers such as analytics and pipelines
+that are grouped in the same region.
+
+Use a dual region when you want similar performance advantages as regions
+but you also want the high availability that comes
+with being geo redundant.
+
+Use a multi region when you want to serve content
+to data consumers that are outside of the google network and disributed across large geographic areas,
+or when you want the higher data availability that comes with being geo redundant.
+
+
+
+	Overview
+Buckets
+- naming requirements
+- cannot be nested
+Objects
+- inherit storage class of bucket when created
+- no minimum size, unlimited storage
+Access
+- gsutil
+- RESTful JSON API or XML API 
+
+	Changing default storage classes
+- default class ia applied to new objects
+- regional bucket can never changed to multi-region/dual-region
+- multi-regional bucket can never be changed to regional
+- Objects can be moved from bucket to bucket
+- Object Lifecycle Management can manage the classes of objects
+
+You can change the storage class of a bucket.
+you can also change the storage class of an object without moveing into another bucket.
+
+	Access control
+Object -> Bucket -> Project
+
+- Cloud IAM (Cloud Identity and Access Management)
+- Access Control Lists (ACLs)
+- Signed URL (signed and timed cryptographic key)
+- Signed policy document (controls file upload policy)
+Can be used together.
+
+	Access Control Lists (ACLs)
+ACLs is a mechanism you use to define
+who has access to your buckets and objects
+as well as what the level of access they have.
+The maximum number of cells and tissues can create for a bucket or object is 100.
+Each ACL consists of one or more entrie and these entrie consists of two pieces of information:
+1- A Scope which defines who can perform the specified actions.
+2- A Permission which defines what actions can be performed.
+
+	Signed URLs
+- Valet key access to buckets and objects via ticket:
+	. Ticket is a cryptographically signed URL
+	. Time-limited
+	. Operations specified in ticket: HTTP GET, PUT, DELETE (not POST)
+	. any user with URL can invoke permitted operations
+- Example using private account key and gsutil:
+	gsutil signurl -d 10m path/to/privatekey.p12 gs://bucket/object
+
+	Cloud Storage features 
+- Customer-supplied encryption key (CSEK)
+		use your own key instead of Google-managed keys
+- Object Lifecycle Management
+		automatically deleted or archive objects
+		examples
+			downgrade storage class on objects older than a year
+			delete objects created before a specific date
+			keep only the 3 most recent versions of an object
+		object inspection occurs in asynchronous batches
+		changes can take 24 hours to apply
+- Object Versioning
+		mintain multiple versions of objects
+		objects are immutable
+		maintain a history of modifications of objects
+		list archived versions of an object, restore an objets an older state or delete
+		turning versioning off leaves existing object versions in place and causes the bucket to stop accumulating new archived object versions
+- Directory synchronization
+		synchtonizes a VM directory with a bucket
+- Object change notification
+- Data import
+- Strong consistency
+
+Object change notification can be used to notify
+an application when an object is updated or added to a bucket.
+Recommendd: Pub/Sub Notifications for Cloud Storage
+Notification Channel
+
+	Data import services:
+- Trasfer Appliance
+	rack, capture and then ship your data to Google Cloud
+- Storage Transfer Service
+	import online data (another bucket, an S3 bucket, or web service)
+- Offline Media Import
+	third-party provider uploads the data from physical media
+
+Cloud Storage provides strong global consistency
+- read-after-write
+- reaf-after-metadata-update
+- read-after-delete
+- bucket listing
+- object listing
+
+
+Filestore
+
 
 
 
