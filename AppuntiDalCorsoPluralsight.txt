@@ -311,22 +311,22 @@ cioè scrivendo i comandi in specifici file di configurazione in formato yaml.
 apiVersion: v1
 kind: Deployment
 metadata:
-  name: nginx
-  labels:
-    app: nginx
+	name: nginx
+	labels:
+		app: nginx
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-	  app: nginx
-  template:
-    metadata:
-	  labels:
-	    app: nginx
+	replicas: 3
+	selector:
+		matchLabels:
+		app: nginx
+	template:
+		metadata:
+		labels:
+			app: nginx
 	spec:
-	  containers:
-	  - name: nginx
-	    image: nginx:1.15.7
+		containers:
+		- name: nginx
+			image: nginx:1.15.7
 		ports:
 		- conainerPort: 80
 
@@ -356,29 +356,29 @@ DEPLOYMENTS
 apiVersion: v1
 kind: Deployment
 metadata:
-  name: nginx
-  labels:
-    app: nginx
+	name: nginx
+	labels:
+		app: nginx
 spec:
-  replicas: 5
-  strategy:
-    
+	replicas: 5
+	strategy:
+		
 	rollingUpdate:
-	  maxSurge: 1
-	  maxUnavailable: 0
+		maxSurge: 1
+		maxUnavailable: 0
 	type: RollingUpdate
 	
-  selector:
-    matchLabels:
-	  app: nginx
-  template:
-    metadata:
-	  labels:
-	    app: nginx
+	selector:
+		matchLabels:
+		app: nginx
+	template:
+		metadata:
+		labels:
+			app: nginx
 	spec:
-	  containers:
-	  - name: nginx
-	    image: nginx:1.15.7
+		containers:
+		- name: nginx
+			image: nginx:1.15.7
 		ports:
 		- conainerPort: 80
 
@@ -394,8 +394,8 @@ ANTHOS is Google's modern solution for hybrid and multi-cloud systems
 		. monitoring systems and services
 		. migrating applications from VMs into clusters
 		. maintaining consestent policies across all clustes,
-		  wheather on-premises or in the Cloud
-		  
+			wheather on-premises or in the Cloud
+			
 BUILDING A MODERN HYBRID INFRASTRUCTURE, STEP BY STEP
 
 Google Kubernetes Engine (GKE) on the Cloud and GKE On-Prem
@@ -566,26 +566,26 @@ LAB deployment-manager and stack driver
 ---
 resources:
 - name: my-vm-1
-  type: compute.v1.instance
-  properties:
-    zone: ZONE
+	type: compute.v1.instance
+	properties:
+		zone: ZONE
 	machineType: zones/ZONE/machineTypes/n1-standard-1
 	metadata:
-	  items:
-	  - key: startup-script
-	    value: "apt-get update"
+		items:
+		- key: startup-script
+			value: "apt-get update"
 	disks:
-    - deviceName: boot
-      type: PERSISTENT
-      boot: true
-      autoDelete: true
-      initializeParams:
-	    sourceImage: https://www.googleapis.com/.../debian...
-    networkInterfaces:
-    - network: https://www.googleapis.com/.../default
-      accessConfigs:
-	  - name: External NAT
-	    type: ONE_TO_ONE_NAT
+		- deviceName: boot
+			type: PERSISTENT
+			boot: true
+			autoDelete: true
+			initializeParams:
+			sourceImage: https://www.googleapis.com/.../debian...
+		networkInterfaces:
+		- network: https://www.googleapis.com/.../default
+			accessConfigs:
+		- name: External NAT
+			type: ONE_TO_ONE_NAT
 --- 
 > sed -i -e 's/PROJECT_ID/'$DEVSHELL_PROJECT_ID/mydeploy.yaml
 > sed -i -e 's/ZONE/'$MY_ZONE/mydeploy.yaml 
@@ -2085,7 +2085,7 @@ but not reconfigure them.
 
 From GCP Console -> IAM & admins -> Roles -> 
  select "Access Approval Config Editor" 
- 	in the right panel you can see the assigned permissions,
+	in the right panel you can see the assigned permissions,
  click "Create Rome From Selection"
  or click "Create Role"
 
@@ -2668,17 +2668,139 @@ Cloud Storage provides strong global consistency
 - object listing
 
 
-Filestore
+	Filestore is a managed file storage service
+for applications that require a file system interface
+and a shared file system for data.
+
+- fully managed network attached storage (NAS) for 
+	Compute Engine and GKE instances.
+- predictable performance
+- full NSFv3 support
+- scales to 100s of TBs for high-performance workloads
+
+use cases:
+- application migration
+- media rendering
+- Electronic Design Automation (EDA)
+- Data analytics
+- genomics processing
+- web content management
 
 
+LAB - Cloud Storage
 
 
+Creiamo un bucket
+nome projectId, multi-regional
+access control model:
+	set object-level and bucket-level permissions
+
+Da Cloud Shell
+> export BUCKET_NAME_1=...
+> curl http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/ClusterSetup.html
+
+> cp setup.html setup2.html
+> cp setup.html setup3.html
+
+> gsutil cp setup.html gs://$BUCKET_NAME_1 
+
+> gsutil acl get gs://$BUCKET_NAME_1/setup.html > acl.txt
+> cat acl.txt
+
+> gsutil acl set private gs://$BUCKET_NAME_1/setup.html
+> gsutil acl get gs://$BUCKET_NAME_1/setup.html > acl2.txt
+
+> cat acl2.txt
+
+> gsutil acl ch -u AllUsers:R gs://$BUCKET_NAME_1/setup.html
+
+> gsutil acl get gs://$BUCKET_NAME_1/setup.html > acl3.txt
+
+> cat acl3.txt
+
+> rm setup.html
+> ls
+
+> gsutil cp gs://$BUCKET_NAME_1/setup.html setup.html
+
+		CREATE THE KEY
+> python -c 'import base64; import os; print(base64.encodestring(os.urandom(32)))'
+		copy the key
+
+> gsutil config -n 
+> nano .boto
+		paste the key
+		encryption_key=...
+
+> gsutil cp setup2.html gs://$BUCKET_NAME_1
+
+> rm setup*
+> gsutil cp gs://$BUCKET_NAME_1/setup* ./
+.
+.
+.
+
+		ENABLE VERSIONING
+> gsutil lifecycle set lige.json gs://$BUCKET_NAME_1
+
+> gsutil lifecycle get gs://$BUCKET_NAME_1
+
+> gsutil versioning get gs://$BUCKET_NAME_1
+
+> gsutil versioning set on gs://$BUCKET_NAME_1
+
+.
+.
+.
 
 
+		CLOUD SQL
+Build your own database solution or use a managed service in Compute Engine
 
+Cloud SQL is a fully managed database service (MySQL, PostgreSQL, Microsoft SQL Server	)
+- Patches and updates automatically applied
+- you administer MySQL users
+- Cloud SQL supports many clients:
+	. gcloud sql
+	. App Engine, Google Workspace scripts
+	. Applications and tools
+		- SQL Workbench, Toad
+		- External applications using standard MySQL drivers
 
+Performance:
+- 30 TB of storage
+- 40000 IOPS
+- 416 GB of RAM
+- scale out with read replicas
+- scale up: machine capacity
 
+Choice:
+- MySQL 5.6, 5.7(default), 8.0
+- PostgreSQL 9.6, 10, 11, 12(default)
+- Microsoft SQL Server 2017
 
+Cloud SQL services:
+- HA configuration
+- backup service
+- import/export
+- scaling up(machine capacity) and out(read replicas)
+
+Può essere conssesso all'interno della stessa Google Cloud region
+attraverso il suo Private IP,
+dall'esterno con l'utilizzo dei certificati SSL oppure Authorized Networks oppure Cloud SQL Proxy.
+
+LAB - CLOUD SQL
+
+nella VPC ci sono due region:
+europe-west1 con Wordpress
+us-central1 con Wordpress e CloudSQL
+
+Possiamo connettere Wordpress e Cloud SQL all'interno della stessa region
+mediante il loro Private IP.
+Per connettere Wordpress e Clodu SQL in due region differenti
+dobbiamo utilizzare gli External IP address.
+Entrambe le connessioni sono encrypted.
+La VPC è cmq globale comprende entrambe le region.
 
 
 
