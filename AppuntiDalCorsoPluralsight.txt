@@ -2793,7 +2793,7 @@ LAB - CLOUD SQL
 
 nella VPC ci sono due region:
 europe-west1 con Wordpress
-us-central1 con Wordpress e CloudSQL
+us-central1 con Wordpress e Cloud SQL
 
 Possiamo connettere Wordpress e Cloud SQL all'interno della stessa region
 mediante il loro Private IP.
@@ -2802,14 +2802,348 @@ dobbiamo utilizzare gli External IP address.
 Entrambe le connessioni sono encrypted.
 La VPC è cmq globale comprende entrambe le region.
 
+Entro in SSH della VM che si trova nella region europe-west1
+e scarico il Cloud SQL Proxy e lo rendo eseguibile
+
+> wget https_//dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy && chmod +x cloud_sql_proxy
+
+> export $SQL_CONNECTION=incollo la instance connection name dell'istanza di Cloud SQL creata, che trovo all'interno delle info dell'istanza
+
+> ./cloud_sql_proxy -instances=$SQL_CONNECTION=TCP:3306 &
+
+> curl -H "metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/network-interfaces/0/access-configs/0/external-ip && echo
+visualizzo l'ip esterno della vm
+attraverso il quale posso accedere alla vm
+e visualizzare wordpress a cui è connesso il db
+
+Ora provo con la VM che si trova in us-central1
+mi copio il private IP dell'istanza di Cloud SQL
+che utilizzerò nel campo datbase host in fase di configurazione
+di word presso senza la necessità di abilitare il proxy
+
+"so I created a direct connecion to a private IP 
+instead of configuring proxy and that connection is private"
+
+
+		CLOUD SPANNER
+Se Cloud SQL non è sufficiente perchè hai bisogno di scalabilità orizzontale,
+puoi considerare Cloud Spanner.
+
+Cloud Spanner combines the benefits of relational database structure
+with non-relational horizontal scale
+- scale to petabytes
+- transactional consistency
+- global scale
+- strong consistency
+- high availability
+- used for financial and inventory applications
+- monthly uptime
+		multi-regional: 99.999%
+		regional: 99.99%
+
+		Characteristics
+
+				Cloud Spanner		|	Relational DB		|	Non-Relational DB
+___________________________________________________________________________
+Schema				yes			|		yes				|	no
+SQL					yes			|		yes				|	no	
+Consistency			strong		|		strong			|	eventual
+availability		high			|		failover			|	high
+scalability			horizontal	|		vertical			|	horizontal
+replication			automatic	|		configurable	|	configurable
 
 
 
+		CLOUD FIRESTORE
+Cloud Firestore is a NoSQL document database
+
+- simplifies storing, syncing, querying data
+- mobile, web, IoT apps at globale scale
+- live synchronization and offline support
+- security features
+- ACID transactions
+- Multi-region replication
+- Powerful query engine
+
+Cloud Firestore is the next generation of Cloud Datastore
+
+Datastore mode (new server projects):
+- compatible with Datastore applications
+- strong consistency
+- no entity group limits
+
+Native mode (new mobile and web apps):
+- strongly consistent storage layer
+- collection and document data model
+- real-time updates
+- mobile and web client libraries
+
+----	CLOUD BIGTABLE
+if you don't require transactional consistency 
+you might want to consider Cloud BigTable
+
+It is a NoSQL big data database service (fully managed)
+- petabyte-scale
+- consistency sub-10ms latency
+- seamless scalability for throughput
+- learn and adjust to access patterns
+- ideal for Ad Tech, Fintech and IoT
+- storage engine for ML applications
+- easy integration with open source big data tools
+
+Processing is separated from storage
+	ci sono più Bigtable node che si occupano del processo
+	che accedono ad un unico Colossus file system
 
 
+	CLOUD MEMORYSTORE 
+is a fully managed Redis service
+
+- in memory data store service
+- focus on building great apps
+- high availability, failover, patching and monitoring
+- sub-millisecond latency
+- instances up to 300GB
+- network throughput of 12 gbps
+- easy lift-and-shift
 
 
+	RESOURCE MANAGEMENT
 
+ Resource Manager lets you hierarchically manage resources
+
+ - Identity and Access Management (IAM)
+ GCP -> Organization -> Folders -> Projects -> Resources -> VM instance
+
+ 	Child policies cannot restrict access granted at the parent level
+
+ - Billing and Resource Monitoring
+ GCP <- Organization <- Folders <- Projects <- Resources <- VM instance
+ 
+ 	Oragnization contains all billing accounts
+
+	 Project is associated with one billing account
+
+ 	A resource belongs to one and only one project
+
+---
+
+Organization node is root node for GCP resources
+
+Project accumulates the consumption of all its resources
+- track resource and quota usage
+	. enable billing
+	. manage permissions and credentials
+	. enable services and APIs
+- projects use three identifying attributes
+	. project name
+	. project number
+	. project ID, also known as Application ID
+
+---
+
+	Resource Hyerarchy
+
+Resources are global, regional or zonal
+
+Examples:
+Global: iamges, snapshots, networks
+Regional: external IP addresses
+Zonal: Instances, Disks
+
+Regardless of the type, each resource is organized into a project.
+This enables each project to have its own billing and reporting.
+
+__QUOTAS
+
+All resources are subject to project quotas or limits
+- how many resources you can create per project (5 VPC networks/project)
+- how quickly you can make API requests in a project: rate limits (5 admin actions/second Cloud Spanner)
+- how many resources you can create per region (24 CPUs region/project)
+
+Project quotas prevent runaway consumption in case of an error or malcius attac
+
+Prevent billing spikes or surprises
+
+Forces sizing consideration and periodic review
+
+___LABELS
+
+- Attached to resources: VM, disks, snapshot, image 
+	(by GCP console, gcloud command line, API)
+- Example uses of labels:
+Inventory
+Filter resources
+In scripts:
+	help analyze costs
+	run bulk operations
+
+Use labels for
+
+- Team oc Cost Center 	
+	team:marketing
+	team:research
+- Components
+	component:redis
+	component:frontend
+- Environment or stage
+	environment:prod
+	environment:test
+- Owner or contact
+	owner:gaurav
+	contact:opm
+- State
+	state:inuse
+	state:readyfordeletion
+
+___BILLING
+Because the consumption of all resources under a project
+accumulates into one billing account.
+Let's talk billing to help project planning and controlling costs you can set a budget.
+
+Setting a budget lets you track how your spend is growing 
+towards that amount.
+
+Labels can help you optimize GCP spend
+
+SELECT
+	TO_JSON_STRING(labels) as labels,
+	sum(cost) as cost
+FROM 'project.dataset.table'
+GROUP BY labels;
+
+Per creare un avviso,
+andare in Billing -> Budgets & alerts -> Create budget
+Nella tab Transactions possiamo vedere le transazioni relative ad un Billing Account
+Nella tab Billing export è possibile esportare in BigQuery oppure in CSV o JSON file in un bucket di Cloud Storage.
+
+
+Possiamo analizzare con BigQuery i dati esportati da Billing export.
+
+
+	RESOURCE MONITORING
+
+Google Cloud's operations suite( preciously Stackdriver)
+- integrated monitoring, logging, diagnostics
+- manages across platforms:
+	. Google Cloud and AWS
+	. dynamic discovery of Google Cloud with smart defaults
+	. Open-source agents and integrations
+- Access to powerful data and analytics tools
+- collaboration with third-party software
+
+Offers Services:
+	Monitoring, Logging, Error Reporting, Trace, Debugger
+
+Site Reliability engineering
+
+Product -> Development -> Capacity Planning -> Testing + Release Procedures ->
+	-> Postmortem/Root Cause Analysis -> Incident Response -> Monitoring
+
+	Monitoring
+
+- dynamic config and intelligent dafaults
+- platform, system and application metrics
+	. ingests data: Metrics, events, metadata
+	. generates insights through dashboards, charts, alerts
+- Uptime/health checks
+- Dashboards
+- Alerts
+
+Workspae is the root entity that holds monitoring and configuration information.
+Each workspace can have between one and one hundred monitored projets including one or more GCP projects 
+and any number of AWS accounts.
+You can have as many workspaces as you want
+but GCP projects and AWS accounts can't be monitored by more than one workspace.
+
+A workspace contains custom dashboards, alerting policies, uptime checks, notification channels and 
+group definitions that you use with your monitored projects.
+
+A workspace can access metric data from its monitored projects
+but the metric data and log entries remain in the individual projects.
+
+The first monitored GCP projct in a workspac is called The Hosting Project, and it must be specified when you create the workspace,
+the name of that project is the name of the workspace.
+
+To access to the AWS account you must configure a project in GCP to hold the AWS connector.
+Because workspaces can monitor all of your GCP projects in a single place,
+a Workspace is a single pane of glass through which you can view resources from multiple GCP projects and AWS accounts.
+
+All Stackdriver users who have access to that workspace have access to all data by default.
+This means that a stack driver role assigned to one person on one project applies equally to all projects monitored by that workspace.
+In order to give people different roles per projects
+and to control visibility to data,
+consider placing the monitoring of those projects in separate workspaces.
+
+Stackdriver monitoring allows you to create custom dashboards
+that contain charts of the metrics that you want to monitor.
+For example, you can create charts that display: 
+- your instances CPU utilization, 
+- the packets or bytes sent and received by those instances,
+the packets are bites dropped by the firewall of those instances.
+
+Charts provide visibility into the utilization
+and network traffic of your VM instances,
+these charts can be customized with filters to remove noise, groups to reduce the number of time series and
+aggregates to group multiple time series together.
+
+Although charts are extremely useful,
+they can only provide insight when someone is looking at them.
+but what if your server goes down in the middle of the night or over the weekend?
+You want to create alerting policies then notify you 
+when specific conditions are met.
+
+For example, you can create an alerting policy when
+the network egress of your VM instance goes above a centain threshold for a specific time frame.
+When this condition you or someone else can be automatically notified through email, sms or other channels, in order to troubleshoot this issue.
+
+You can also create an alerting policy that monitors your stackdriver usage
+and alerts you when you approach the threshold for billing.
+
+Uptime checks can be configured to test the availability
+of your public services form locations around the world.
+The type of uptime check can be set to http, https or TCP.
+The resource to be checked can be
+	App Engine application,
+	Compute Engine instance,
+	URL of a host
+	AWS instance
+	loadbalancer.
+For each uptime check, you can create an alerting policy
+and view the latency of each global location.
+
+	Monitoring agent can access to VM instances.
+
+Stackdriver monitoring can access some metrics without the monitoring agent including CPU utilization, some disk traffic metrics,
+network traffic and up time information.
+
+However, to access additional system resources and application services,
+you should install the monitor agent.
+The monitor agent is supported for Compute Engine and 
+EC2(AWS) instances.
+The monitor agent can be installed with these two simple commands
+wich you could include in your startup script:
+
+> curl -sSO https://dl.googl.com/cloudagents/add-monitoring-agent-repo.sh
+> sudo bash add-monitoring-agent-repo.sh
+
+This assume that you have a VM instance running Linux
+that is being monitored by a workspace
+and that your instance has the proper credentials for the agent.
+
+If the standard metrics provided by Stackdriver Monitoring (now Cloud Monitoring), do not fit your needs,
+you can create custom metrics.
+
+For example, imagine a game server that has a capacity of 50 users,
+what metric indicator might you use to trigger scaling events?
+From an infrastructure perspective,
+you might consider using CPU load or perhaps network traffic load as values that are somewhat correlated
+with the number of users.
+But with custo metrics, you could actually pass
+the current number of users directly from your application into stack driver to get.
+
+
+LAB - Stackdriver Monitoring -> Cloud Monitoring
 
 
 
