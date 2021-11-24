@@ -3145,6 +3145,658 @@ the current number of users directly from your application into stack driver to 
 
 LAB - Stackdriver Monitoring -> Cloud Monitoring
 
+Abbiamo 3 VM instance nginxstack-1/2/3
+
+- Da Stackdriver, Monitoring Overview page -> Create dashboard
+scegliere nome, Add Chart 
+Find resource type and metric:
+	Resource type: GCE VM instance
+	Metric: CPU utilization
+View options: X-Ray mode
+
+- Resources -> Metric Explorer 
+Find resource type and metric:
+	Resource type: GCE VM instance
+	Metric: CPU utilization
+
+- Alerting -> Create policy
+Find resource type and metric:
+	Resource type: GCE VM instance
+	Metric: CPU utilization
+Condition: is above threshold (20) for (1 minute)
+
+Find resource type and metric:
+	Resource type: GCE VM instance
+	Metric: Reserved cores
+Condition: is above threshold (1) for (1 minute)
+
+Policy Triggers:
+	Trigger when: ALL conditions are met
+
+Notifications: Email
+
+Groups -> Create Group
+	name contains nginx
+
+- Uptime Checks -> Uptime Check Overview -> Add Uptime Check
+	Title
+	Check type: HTTP
+	Resource Type: Instance / URL ....
+	Applies to: Single / Group
+	Path: ...
+	Check every: 1 minute
+
+
+	LOGGING (previously Stackdriver Logging)
+- Platform, systems and applicaion log
+	. API to write to logs
+	. 30-day retention
+- log seach/view/filter
+- log-based metrics
+- monitoring alerts can be set on log events
+- Data can e exported to Cloud Storage, BigQuery and Pub/Sub
+
+Analyze logs in BigQuery and visualize in Data Studio
+
+Installing Logging agent:
+
+> curl -sSO https://dl.google.com/cloudagents/install-logging-agent.sh
+> sudo bash install-logging-agent.sh
+
+It's best practice to install logging agent on all of your VM instances.
+The logging agent can be installed with these two simple commands.
+which you could include in your startup script.
+This agent is supported for Compute Engine and EC2 instances(AWS).
+
+
+	ERROR REPORTING
+
+Agregate and display errors for running cloud services:
+- Error notifications
+- Error dashboard
+- App Engine, Apps Script, Compute Engine, Cloud Functions, Cloud Run, GKE, Amazon EC2
+- Go, Java, .NET, Node.js, PHP, Python, and Ruby
+
+	TRACING: Cloud Trace (previously Stackdriver Trace)
+
+Tracing system
+- Display data in nead real-time
+- Latency reporting
+- Per-URL latency sampling
+Collects latency data:
+- App Engine
+- Google HTTPS(S) load balancers
+- Applications instrumented with the Cloud Trace SDKs
+
+
+	DEBUGGING: Cloud Debugger (previously Stackdriver Debugger)
+- Inspect an application without stopping it or slowing it down significantly
+- Debug snapshots:
+	Capture call stack and local variables of a running application
+- Debug logpoints:
+	Inject logging into a service without stopping it
+- Java, Python, Go, Node.js, Ruby, PHP, .NET Core
+
+
+LAB
+Sviluppiamo un'app App Engine con un bug
+al fine di sfruttare Error Reporting & Debugging per individuarlo
+
+Dalla Shell andiamo a creare un folder e a copiarci una hello world application
+
+> mkdir appengine-hello
+> cd appengine-hello
+> gsutil cp gs://cloud.training/archinfra/gae-hello/* .
+> dev_appserver.py $(pwd)
+
+tale web app risponde all'endpoint https://8080-dot-.....
+
+Adesso procediamo al deply dell'application su App Engine
+
+> gcloud app deploy app.yaml
+> gcloud app browse
+la Shell risponde con la url cliccabile per raggiungere l'endpoint dell'app
+
+Andiamo ora a modificare il file principale dell'app al fine di inserire un bug
+
+> cat main.py
+import webapp2
+
+class MainPage(webapp2.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type']='text/plain'
+		self.response.write('Hello, World!')
+
+app=webapp2.MSGIApplication([
+	('/',MainPAge),
+	],debug=True)
+
+		---> modifichiamo l'import in 22:
+
+import webapp22
+
+class MainPage(webapp2.RequestHandler):
+	def get(self):
+		self.response.headers['Content-Type']='text/plain'
+		self.response.write('Hello, World!')
+
+app=webapp2.MSGIApplication([
+	('/',MainPAge),
+	],debug=True)
+
+> sed -i -e 'a/webapp2/webapp22' main.py (comando di modifica)
+> cat main.py (per verificare che la modifica sia avvenuta correttamente)
+
+> gcloud app deploy app.yaml --quiet
+> gcloud app browse
+
+andando a cliccare sul link fornitoci incappiamo in un errore
+
+Andiamo in Error Reporting
+vediamo l'errore
+possiamo cliccare sull'errore e vedremo la stack driver
+correggiamo l'errore e rifacciamo il deploy della web app
+
+-----------------------------------------------------
+ELASTIC GOOGLE CLOUD INFRASTRUCTURE: SCALING AND AUTOMATION
+
+Cloud VPN securely connects your on-premises network to your GCP VPC network
+- useful for low-volume data connections
+- 99.9% SLA
+- supports:
+	. site-to-site VPN
+	. static routes
+	. dynamic routes (Cloud Router)
+	. IKEv1 and IKEv2 cipher
+
+Traffic traveling between the two networks is encrypted by one VPN gateway 
+then decrypted by the other VPN gateway.
+This protect your data as it travels over the public internet
+and that's why Cloud VPN is useful for low volume data connections.
+
+As a managed service, Cloud VPN provides an SLA of 99.9%
+
+Cloud VPN doesn't support use cases where client computers need to dial in VPN using client VPN software.
+
+Also dynamic routes are configured with Cloud Router.
+
+	VPN topology
+
+On-premises Network 
+	On-premises VPN Gateway 
+	-> On-premises External IP 
+	-> Internet
+
+GCP, VPC Network
+	-> GCP Regional External IP 
+	-> Cloud VPN Gateway 
+	-> Routing Table 
+	-> VPC Routing 
+	-> Internal IP addresses -> Resources
+
+In order to connect to your on premises network and its resources you need to configure your Cloud VPN gateway, on-premise VPN gateway and two VPN tunnels.
+
+The Cloud VPN gateway is a regional resource that uses a regional external IP address.
+
+Your On-premises VPN gateway can be a physical device in your data center or a software based VPN offering in another Cloud provider network,
+this VPN gateway also has an external IP address.
+
+A VPN tunnel then connects your VPN gateways and servers
+as the virtual medium through which encrypted traffic is passed.
+
+In order to create a connection between two VPN gateways
+you must establish two VPN tunnels.
+Each tunnel defines the connection from the perspective of its gateway and traffic can only oass when the pair of tunnels established.
+
+One thing to remember:
+when using Cloud VPN is that the maximum transmission unit or MTU for your on premises VPN gateway cannot be grater than 1460 bytes.
+This is because the encryption and encapsulation of packets.
+
+
+	DYnamic routing with Cloud Router
+
+GCP
+	- resources
+	- Google VPN Gateway
+	- Cloud Router
+
+Peer Network
+	- Peer Gateway
+	- Racks
+
+The connection between Cloud Router and Peer Gateway(on-premises) is:
+BGP link-local IP addresses
+
+Cloud VPN supports static and dynamic routes.
+In order to use dynamic routes you need to configure Cloud Router.
+
+Cloud Router can manage routes from a Cloud VPN tunnel
+using border Gateway protocol or BGP(?)
+This routing method allows for routes to be updated and
+exchanged without changing the tunnel configuration.
+
+In addition to Classic VPN, Google Cloud also offers a second type of Cloud VPN gateway, HA
+VPN. HA VPN is a high availability Cloud VPN solution that lets you securely connect your
+on-premises network to your Virtual Private Cloud (VPC) network through an IPsec VPN
+connection in a single region. HA VPN provides an SLA of 99.99% service availability.
+For more information on HA VPN, refer to the documentation Cloud VPN topologies:
+https://cloud.google.com/network-connectivity/docs/vpn/concepts/topologies
+
+For information on moving to HA VPN, see Moving to HA VPN:
+https://cloud.google.com/network-connectivity/docs/vpn/how-to/moving-to-ha-vpn
+
+-----------------------------------------------------
+LAB - Virtual Private Networks
+
+In this lab, you establish VPN tunnels between two networks in separate regions such that a VM in one network can ping a VM in the other network over its internal IP address.
+
+Il ping con l'ip esterno va a buon fine:
+> ping -c 3 <ext IP add>
+
+Il ping con l'ip interno fallisce!!!
+
+	Create the VPN gateways and tunnels
+Establish private communication between the two VM instances by creating VPN gateways and tunnels between the two networks.
+
+Reserve two static IP addresses
+Reserve one static IP address for each VPN gateway.
+
+In the Cloud Console, on the Navigation menu (Navigation menu), click VPC network > External IP addresses.
+
+Click Reserve static address.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	vpn-1-static-ip
+IP version	IPv4
+Region	us-central1
+Click Reserve.
+
+Repeat the same for vpn-2-static-ip.
+
+Click Reserve static address.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	vpn-2-static-ip
+IP version	IPv4
+Region	europe-west1
+Click Reserve.
+
+Note both IP addresses for the next step. They will be referred to us [VPN-1-STATIC-IP] and [VPN-2-STATIC-IP].
+
++Create the vpn-1 gateway and tunnel1to2
+
+In the Cloud Console, on the Navigation menu (Navigation menu), click Hybrid Connectivity > VPN.
+
+Click Create VPN Connection.
+
+If asked, select Classic VPN, and then click Continue.
+
+Specify the following in the VPN gateway section, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+	Name	vpn-1
+	Network	vpn-network-1
+	Region	us-central1
+	IP address	vpn-1-static-ip
+Specify the following in the Tunnels section, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+	Name	tunnel1to2
+	Remote peer IP address	[VPN-2-STATIC-IP]
+	IKE pre-shared key	gcprocks
+	Routing options	Route-based
+	Remote network IP ranges	10.1.3.0/24
+Make sure to replace [VPN-2-STATIC-IP] with your reserved IP address for europe-west1.
+
+Click command line.
+The gcloud command line window shows the gcloud commands to create the VPN gateway and VPN tunnels and it illustrates that three forwarding rules are also created.
+
+Click Close.
+Click Create.
+
+
+
++Create the vpn-2 gateway and tunnel2to1
+
+Click VPN setup wizard.
+
+If asked, select Classic VPN, and then click Continue.
+
+Specify the following in the VPN gateway section, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+	Name	vpn-2
+	Network	vpn-network-2
+	Region	europe-west1
+	IP address	vpn-2-static-ip
+Specify the following in the Tunnels section, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+	Name	tunnel2to1
+	Remote peer IP address	[VPN-1-STATIC-IP]
+	IKE pre-shared key	gcprocks
+	Routing options	Route-based
+	Remote network IP ranges	10.5.4.0/24
+Make sure to replace [VPN-1-STATIC-IP] with your reserved IP address for us-central1.
+
+Click Create.
+Click Cloud VPN Tunnels.
+Click Check my progress to verify the objective.
+
+Create the 'vpn-2' gateway and tunnel
+Wait for the VPN tunnels status to change to Established for both tunnels before continuing.
+
+
+ Verify VPN connectivity
+
+ Verify server-1 to server-2 connectivity
+In the Cloud Console, on the Navigation menu, click Compute Engine > VM instances.
+
+For server-1, click SSH to launch a terminal and connect.
+
+To test connectivity to server-2's internal IP address, run the following command:
+
+ping -c 3 <insert server-2's internal IP address here>
+Exit the server-1 SSH terminal.
+
+For server-2, click SSH to launch a terminal and connect.
+
+To test connectivity to server-1's internal IP address, run the following command:
+
+ping -c 3 <insert server-1's internal IP address here>
+Remove the external IP addresses
+Now that you verified VPN connectivity, you can remove the instances' external IP addresses. For demonstration purposes, just do this for the server-1 instance.
+
+On the Navigation menu, click Compute Engine > VM instances.
+Select the server-1 instance and click Stop. Wait for the instance to stop.
+Instances need to be stopped before you can make changes to their network interfaces.
+Click on the name of the server-1 instance to open the VM instance details page.
+Click Edit.
+For Network interfaces, click the Edit icon (Edit).
+Change External IP to None.
+Click Done.
+Click Save and wait for the instance details to update.
+Click Start.
+Click Start again to confirm that you want to start the VM instance.
+Return to the VM instances page and wait for the instance to start.
+Notice that External IP is set to None for the server-1 instance.
+Feel free to SSH to server-2 and verify that you can still ping the server-1 instance's internal IP address. You still be able to SSH to server-1 from the Cloud Console using Cloud IAP as described here.
+
+External IP addresses that don’t fall under the Free Tier will incur a small cost. Also, as a general security best practice, it’s a good idea to use internal IP addresses where applicable and since you configured Cloud VPN you no longer need to communicate between instances using their external IP address.
+Task 4: Review
+In this lab, you configured a VPN connection between two networks with subnets in different regions. Then you verified the VPN connection by pinging VMs in different networks using their internal IP addresses.
+
+You configured the VPN gateways and tunnels using the Cloud Console. However, this approach obfuscated the creation of forwarding rules, which you explored with the command line button in the Console. This can help in troubleshooting a configuration if needed.
+
+--- Overview:
+
+In questo lab abbiamo configurato una connessione VPN 
+tra due network con subnet in regioni differenti.
+Successivamente abbiamo verificato la connessione mediante ping con ip interno delle VM.
+
+Nel Deployment Manager del nostro progetto
+possiamo verificare le reti e sottoreti, 
+le istanze di VM e le firewall rules.
+
+Da VPC network possiamo vedere la default network
+e le due custom networks vpn-network-1/2 con rispettivamente
+le due subnet us-central1 e europe-west1.
+
+In Firewall rules possiamo vedere le firewall rules create di default con gli ingress abilitati.
+
+Da Compute Engine possiamo vedere le due istanze
+e le network e subnet a cui appartengono.
+
+Possiamo effettuare il ping reciproco delle VM,
+possiamo verificare che funziona solo con IP esterno.
+
+Andiamo in VPC network -> Externa IP addresses
+riserviamo un IP esterno statico per ciascuna delle custom network:
+	vpn-1-static-ip
+	vpn-2-static-ip
+
+	CREAZIONE PRIMA VPN
+Andiamo in Hybrid Connectivity -> VPN -> Create a VPN
+scegliamo Classic VPN
+
+Google Compute Engine VPN gateway
+name: vpn-1
+network: vpn-network-1
+IP address: vpn-1-static-ip
+
+Tunnels
+name: tunnel1to2
+remote peer IP address: vpn-2-static-ip
+routing options
+	rout-based
+		remote network IP ranges: 10.1.3.0/24
+
+	CREAZIONE SECONDA VPN
+Google Compute Engine VPN gateway
+name: vpn-2
+network: vpn-network-2
+IP address: vpn-2-static-ip
+
+Tunnels
+name: tunnel2to1
+remote peer IP address: vpn-1-static-ip
+routing options
+	rout-based
+		remote network IP ranges: 10.5.4.0/24
+
+Dopo aver creato queste due VPN 
+siamo in grado di effettuare il ping dalle due VM
+reciprocamente sfruttando l'indirizzo IP interno.
+
+
+
+
+	CLOUD INTERCONNECT AND PEERING SERVICES
+
+There are different cloud interconnect and peering services available to connect your infrastructure to 
+Google's network.
+
+_________________________________________________
+...........	Dedicated			Shared
+
+Layer 3 		Direct Peering		Carrier Peering
+
+Layer 2 		Dedicated 			Partner 
+				Interconnect 		Interconnect
+_________________________________________________
+
+Cloud VPN is between Direct Peering and Carrier Peering, this service ses the public internet 
+but traffic is encrypted and provides access to internal IP addresses,
+that's why Cloud VPN is a useful addition to direct peering and carrier peering.
+
+
+---Dedicated Interconnect 
+provides direct physical connections
+between your on premises network (on-premises router) and Google's network (Google Router).
+This enables you to transfer large amount of data
+between networks which can be more cost effective than purchasing additional bandwith over public internet.
+
+VPC <-> Cloud Router <->  Google Peering Edge(in colocation facility) <-> On-premises router
+
+In order to use dedicated interconnect,
+you need to provision a cross connect
+between the Google network and your own router in a common collocation facility.
+To exchange routes between the networks,
+you configure a BGP session over the interconnect between the Gloud Router and the on-premises router.
+This will allow user traffic from the on-premises network
+to reach GCP resources on the VPC network and ....
+
+Dedicated Interconnect can be configured to offer a 99.9% or 99.99% up time SLA.
+
+In order to use Dedicated Interconnect,your network must physically meet Google's network in a supported collocation facility.
+
+
+---Partner Interconnect 
+provides connectivity through a supported service provider between your on-premises network and your
+VPC network.
+This is useful if your data center is in the physical location that cannot reach a dedicated interconnect collocation facility or
+if your data needs don't warrant a dedicated interconnect.
+In order to use Partner Interconnect,
+you work with the supported service provider to connect your VPC and on-premises netwrks.
+These service providers have existing physical connections to Google's network
+that they make available for their customers to use.
+After you establish connectivity with the service provider,
+you can request a Partner interconnect connection from your service provider,
+then establish a BGP session between your cloud router and on-premises router
+to start passing traffic between your network.
+
+Partner Interconnect can be configured to offer a 99.9% or 99.99% uptim SLA between Google and the service provider.
+
+
+
+VPC subnet <-> Cloud Router <->  Google Peering Edge(in colocation facility) <-> Service provider peering edge <-> On-premises router
+
+
+---Comparison of Interconnect options
+
+Ipsec VPN tunnel connection:
+	provides encrypted tunnel to VPC networks through the public internet
+	capacity: 1.5(public internet)-3(direct peering link) gbps per tunnel
+	requirements: on-premises VPN gateway
+	access type: internal IP addresses
+
+Dedicated Interconnect connection:
+	provides dedicated, direct connection to VPC networks
+	capacity: 10 gbps per link (100 gbps BETA)
+	requirements: connection in colocation facility
+	access type: internal IP addresses
+
+Partner Interconnect connection:
+	provides dedicated bandwidth, connection to VPC network through a service provider
+	capacity: 50 mbps - 10 gbps per connecion
+	requirements: service provider
+	access type: internal IP addresses
+
+
+-----------------------------------------------
+	CLOUD PEERING SERVICES
+
+---Direct Peering 
+provides a direct connection between you business network and Google's network
+- broad-reaching edge network location
+- exchange BGP routes
+- reach all of Google's services
+- peering requirements
+- no SLA
+
+GCP Edge Points of Presence (PoPs) are where
+Google's network connects to the rest of the internet reappering.
+PoPs are present on over 90 Internet exchanges and at over 100 interconnection facilities aroutnd the world.
+
+---Carrier Peering 
+provides connectivity through a supported partner
+- Carrier Peering partner
+- reach all of Google's services 
+- Partner requirements
+- NO SLA 
+
+
+Comparison od Peering Options:
+
+Direct Peering connection:
+	provides dedicated, direct connection to Google's network
+	capacity: 10 gbps per link
+	requirements: connection in GCP PoPs
+	access type: public IP addresses
+
+Carrier Peeerign connection:
+	provides: peering through service provider to Google's public network
+	capacity: varies based on partner offering
+	requirements: service Provider
+	access type: public IP addresses
+
+
+Choosing a network connection option
+	
+	Interconnect
+Direct access to RFC1918 IPa in your VPC with SLA
+- Dedicated Interconnect
+- Partner Interconnect
+- Cloud VPN
+
+	Peering
+Access to Google public IPs only without SLA
+- Direct Peering
+- Carrier Peering
+
+----------------------------------------------
+	SHARING VPC NETWORKS
+
+Let's move out attention from Hybrid connectivity
+to share VPC networks.
+In the simples Cloud environment a single project might have one VPC network
+spanning many regions with VM instances hosting very large and complicated applications.
+However, many organizations commonly deploy multiple isolated projects with multiplic VPC networks and subnets.
+We are going to cover two configuarions for sharing VPC networks across GCP projects.
+
+Shared VPC allows an arganization to connect resources from multiple projects 
+to a common VPC network. This allows the resources to communicate 
+with each other securely and efficiently using internal IPs from that network.
+
+When you use Shared VPC, 
+you desighate a project as a host project and attach one or more other service projects to it.
+
+
+	VPC NETWORK PEERING,
+in contrast, allows private RFC1918 connectivity across two VPC networks.
+Regardless of whether they belong on the same project or the same organization.
+
+Remember that each VPC network will have firewall rules that define what traffic is allowed or denied between the networks.
+
+For example, there are two organizations that represent
+a consumer and a producer respectively.
+Each organization has its own organization node,
+VPC network, virtual machine instances, network admin and instance admin.
+
+In order for VPC network peering to be established successfully,
+the producer network admin needs to peer the producer network with the consumer network,
+and the consumer network admin needs to peer the consumer network with the producer network.
+When both peering connections are created,
+the VPC network peering session becomes active and routes are exchanged.
+This allows the virtual machine instances to communicate privately using their internal IP addresses.
+
+VPC network peering is a decentralized or distributed approach
+to multi-project networking because each VPC network may remain under the control of separate administrator groups 
+and maintains its own global firewall and routing tables.
+
+Historically, such projects would consider external IP addresses
+or VPNs to facilitate private communication between VPC networks.
+However, VPC network peering does not incur the network latency, security, and cost drawbacks
+that are present when using external IP addresses or VPNs.
+
+
+	SHARED VPC VS. VPC PEERING
+__________________________________________________
+Consideration				Shared VPC 		VPC network Peerign
+
+Across organizations 	NO 				YES
+
+Withing project 			NO 				YES
+
+Network administation 	Centralized 	Decentralized
+__________________________________________________
+
+The biggest difference between the two configurations is the network administration models.
+
+Shared VPC is a centralized approach to multi-project networking,
+because security and network policy occurs in the single designated VPC network.
+
+In contrast, VPC network peering is a decentralized approach,
+because each VPC network can remain under the control of separate administrator groups
+and maintains its own global firewall and routing tables.
+
+--------------------------------------------------
+
+
 
 
 
