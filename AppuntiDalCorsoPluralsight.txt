@@ -3796,11 +3796,119 @@ and maintains its own global firewall and routing tables.
 
 --------------------------------------------------
 
+	LOAD BALANCING AND AUTOSCALING
+
+_________________________________________________
+|	GLOBAL 				REGIONAL
+|	- HTTP(S)			- Internal TCP/UDP
+|	- SSL PROXY 		- Network TCP/UDP
+|	- TCP PROXY 		- Internal HTTP(S)
+|_________________________________________________
+
+GCP offers different types of load balancers that
+can be divided into two categoris: Global and Regional
+
+The global loadbalancers are the http, https, ssl proxy load balancers.
+These load balancers leverage the Google front ends which are software defined distributed 
+systems that sit in Google's point of presence and are dstributed globally.
+
+Therefore, you want to use a global load balancer when your users and instances are globally distributed,
+your users need access to the same application and content and you want to provide access using a single any cost IP address. 
+
+The regional load balancers are the internal and network load balancers and
+they dstribute traffic to instances that are in a single GCP region.
+
+The internal load balancer uses Andromeda,
+which is GCP software defined network virtualization stack
+and the network load balancer uses Maglec,
+which is a large distributed software system.
+
+There is also another internal load balancer for http, https traffic.
+The sixth load balancer is a proxy based regional layer 7 load balancer,
+that enables you to run and scale your services behing a private load balancing IP address that is accessible only in the load balancers region in your VPC network.
 
 
+++ Managed Instance Groups
+- Deploy identical instances based on instance template
+- INstance group can be resized
+- Manager ensures all instances are RUNNING
+- Typically used with autoscaler
+- Can be single zone or regional
+
+A managed instance group is a collection of identical VM instances that you control as a single entity using an Instance Template.
+
+You can easily update all the instances in a group by specifying a new template in a rolling update.
+
+Also when your applications require additional compute resources,
+managed instance groups can scale autoatically to the number of instances in the group.
+
+Managed instance groups can work with load balancing services to distribute traffic to all of the instances in the group.
+
+If an instance in the group stops, crashes or is deleted by an action other than the instance groups commands, the managed instance group automatically recreates the instance so it can resume irs processing tasks.
+
+The recreated instance uses the same name and the same instance template as the previous instance.
+
+Managed instance groups can automatically identify and recreate unhealthy in a group to ensure that all instances are running optimally.
+
+Regional managed instance groups are generally recommended
+over zonal managed instance groups 
+because they allow you to spread the application load across multiple zones, instead of confining your application to a single zone or having you manage multiple instance groups across different zones.
+
+This replication protects against zonal failures
+and unforeseen scenario (scenario imprevisto)
+or an entire group of instances in a single zone malfunctions.
+IF that happens, your application can continue serving traffic from instances running in another zone in the same region.
+
+In order to create a manage instance group,
+you first need to create an instance template.
+Next, you are going to create a managed instance group of an spcified instances.
+The instance group manager then automatically populates the instance group,
+based on the instance template.
+You can easily create instance templates using the Cloud Console.
+The instance template dialog looks and works exactly like creating an instance,
+except that the choices are recoded so they can repeated.
+When you create an instance group,
+you define the specific rules dor that instance group.
+
+First you decide what type of managed instance group you want to create,
+you can use managed instance groups 
+
+- for stateless serving or batch workloads such as website front end or image processing from IQ 
+- or for statefull applications, such as databases or legacy applications.
+
+Second, provide a name fro the instance group.
+
+Third, decide whether the instance group is going to be single or multi zoned and where those locations will be.
+You can optionally provide port name mapping details.
+
+Fourth, select the instance template that you want to use.
+
+Fifth, deciding whether you want to autoscale and under what circumstances.
+
+Finally, consider creating a health check to determine which instances are healthy and should receive traffic.
+
+Essentially, you're creating virtual machines but you're applying more rules to that instance group.
 
 
+Managed instance group offer autoscaling caabilities
+- Dybanucally add/remove instances:
+	. Increases in load
+	. Decreases in load
+- Autoscaling policy:
+	. CPU utilization
+	. Load balancing capacity
+	. Monitoring metrics
+	. Queue-based workload
 
+A health check is very similar to an up time check in Stackdriver,
+you just define a protocol, port and health criteria, based on this configuration, 
+GCP computes a health state for each instance.
 
+The health criteria defines how often to check whether an instance is healty (check interval).
+How long to wait for a response (time out).
+How many successful attempts are decisive,
+that's the healthy threshold.
+How many failed attempts are decisive,
+that's the unhealthy threshold.
 
-
+https://app.pluralsight.com/course-player?clipId=561ccdd0-2dd5-456e-86e2-261df334b1fd
