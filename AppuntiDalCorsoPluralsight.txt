@@ -4497,19 +4497,149 @@ copiamo l'ip interno della prima VM ed entriamo in SSH della seconda VM
 
 LAB - Automating the Deployment if Infrastructure using Terraform
 
+Cloud Shell
+
+> terraform --version
+
+> mkdir tfinfra
+> cd tfinfra
+
+apro l'editor
+new file in tfinfra: provider.tf
+	
+	provider "google" {}
+
+> terraform init
+
+new file in tfinfra: mynetwork.tf
+	
+	#create the mynetwork network
+	resource "google_compute_nework" "mynetwork" {
+	name = "mynetwork"
+	auto_create_subnetworks = true
+	}
+
+	#add a firewall rule to allow HTTP, SSH, RDP, ICMP traffic on mynetwork
+	resource "google_compute_firewall" "mynetwork-allow-http-ssh-rdp-icmp" {
+	name = "mynetwork-allo-http-ssh-rdp-icmp"
+	network = google_compute_network.mynetwork.self_link
+	allow {
+			protocol = "tcp"
+			ports = ["22","80","3389"]
+			}
+	allow {
+			protocol = "icmp"
+			}
+	}
+
+	#create the mynet-us-vm instance
+	module "mynet-us-vm" {
+		source = "./instance"
+		instance_name = "mynet-us-vm"
+		instance_zone = "us-central1-a"
+		instance_subnetwork = google_compute_network.mynetwork.self_link
+	}
+
+	#create the mynet-eu-vm instance
+	module "mynet-eu-vm" {
+		source = "./instance"
+		instance_name = "mynet-eu-vm"
+		instance_zone = "europe-west1-a"
+		instance_subnetwork = google_compute_network.mynetwork.self_link
+	}
+
+save
+
+Creiamo un nuovo folder in tfinfra che chiamiamo instance, al cui interno creiamo un file main.tf
+	
+	variable "instance_name" {}
+	variable "instance_zone" {}
+	variable "instance_type" {
+		default = "n1-standard-1"
+	}
+	variable "instance_subnetwork" {}
+
+	resource "google_compute_instance" "vm_instance" {
+		name = "${var.instance_name}"
+		zone = "${var.instance_zone}"
+		machine_type = "${var.instance_type}"
+			boot_disk {
+			initialize_params {
+				image = "debian-cloud/debian-9"
+				}
+			}
+		network_interface {
+		subnetwork = "${var.instance_subnetwork}"
+		access_config {
+
+		}
+		}
+	}
+
+save
+
+
+> terraform fmt
+mynetwork.tf
+> terraform init
+
+> terraform plan
+
+> terraform apply
+
+Per fare il test
+andiamo da Google Console in VM instances (Compute Engine)
+copiamo l'IP interno di una VM
+entriamo in SSH dell'altra VM ed eseguiamo il ping.
+
+___________________________________________________
+
+	GCP MARKETPLACE
+- deploy production-grade solutions
+- single bill for GCP and third-party services
+- manage solutions using Deployment Manager
+- notifications when a security update is available
+- direct access to partner support
+
+Deploy a LAMP STACK to a single Compute Engine instance using Marketplace,
+it consists of Linux, Apache HTTP Server, MySQL and PHP.
+
+GCP -> Marketplace -> lamp stack -> Launch on Compute Engine
 
 
 
 
+	MANAGED SERVICES
 
+BIGQUERY
+BigQuery is GCP's serverless, highly scalable
+and cost-effective cloud data warehouse.
+- fully managed
+- Petabyte scale
+- SQL interface
+- very fast
+- free usage tier
 
+		SELECT language, SUM(views) as views
+		FROM (
+			SELECT title, language, MAX(views) as views
+			FROM [bigquery-samples:wikioedia_benchmark.Wiki100B]
+			WHERE REGEXP_MATCH(title, "G.*o.*")
+			GROUP EACH BY title, language
+			)
+		GROUP EACH BY language
+		ORDER BY views desc;
 
+Query 100 billin rows in less than 1 minute.
 
+CLOUD DATAFLOW
+Use Cloud Dataflow to execue a wide variey of data processing patterns
+- serverless, fully managed data processing
+- batch and stream processing with autoscale
+- open source programming using Beam
+- intelligently sale to millions of QPS
 
-
-
-
-
+S
 
 
 
