@@ -4639,10 +4639,42 @@ Use Cloud Dataflow to execue a wide variey of data processing patterns
 - open source programming using Beam
 - intelligently sale to millions of QPS
 
-S
+CLOUD DATAPREP
+Use Cloud Dataprep to visually explore, clean and prepare data for analysis and machine learning.
+- serverless, works at any scale
+- suggests ideal data transformation
+- focus on data analysis
+- integrated partner service operated by Trifacta
+
+CLOUD DATAPROC
+Cloud Dataproc is a service for running Apache Spark
+and Apache Hadoop clusters
+- low cost (per-second, preemptible)
+- super fast to start, scale and shut down
+- integrated with GCP
+- managed service
+- simple and familiar
+
+Dataflow VS. Dataproc
+If you have dependencies on specific tools/packages
+in the Apace Hadoop/Spark ecosystem, you use Dataproc.
+
+If not,
+if you prefer hands on or DevOps approach to operations use Dataproc,
+or a hands off or serverless approach use Dataflow.
 
 
+DEMO - Cloud Dataproc
 
+Dataproc -> create cluster
+automaticamente si sono generate le vm
+
+create a Job
+	type Spark
+	main class or jar: org.apache.spark.examples.SparkPi
+	arguments: 1000
+	jar files: file:///usr/lib/spark/esamples/jars/spark-examples.jar
+	
 
 
 
