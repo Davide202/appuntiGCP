@@ -1,0 +1,304 @@
+Cloud Computing has 5 fundamental attributes:
+
+1- computer resources are on-demand  and self service
+no human interventio needed to get resources
+
+2 - broad network access
+resources are accessible over a network from any location
+
+3 - Resource pooling
+Provider shares resources to customers from a large pool
+allowing them to benefit from
+economies of scale.
+Customer don't have to know or care about the exact physical location of these resources.
+
+4 - Rapid elasticity
+Get more resources quickly as needed
+Resources themselves are elastic.
+Customers who need more resources can get the rapidly when they need less
+that can scale back.
+
+5 - Measured service
+Pay only for what you consume
+Customers pay for only what they use or reserve as they go.
+If they stop using resources, they simply stopped paying.
+
+
+Google Cloud offers a range od services
+
+Compute 
+	Compute  Engine (run vm in the cloud)
+	Kubernetes Engine (GKE)
+	App Engine
+	Cloud Function
+
+Building your own database solution
+	puoi installare il tuo database in Compute Engine
+	e in GKE.
+
+Or use a managed service:
+	Storage:	Cloud Bigtable
+				Cloud Storage
+				Cloud SQL
+				Cloud Spanner
+				Datastore
+	Big Data:	BigQQuery
+				Pub/Sub
+				Dataglow
+				Dataproc
+				Notebooks
+	Machine Learning:
+				Vision API
+				Vertex AI
+				Speech-to-Text API
+				Cloud Translation API
+				Cloud Natural Language API
+
+Resource Management
+	Global, Multi-region, Region, Zone
+
+Zonal resources operate exclusively in a single zone
+	
+Physical organization
+	
+	Global: HTTP(S) load balancer
+		Regional:	Regional GKE cluster
+			Zonal:	Persistendt Disk, GKE node
+
+	Global: Virtual Private Cloud (VPC)
+		Regional: Datastore
+			Zonal:	Compute Engine instance, Persistent Disk
+
+Logical organization
+	
+	Organization
+		Folder
+			Project:	GKE
+			Project:	Cloud Storage Bucket, Compute Engine Instance
+			Project: App Engine Service
+
+Le policy per i permessi si ereditano gerarchicamente
+dall'alto verso il basso.
+
+How billing works
+. Billing account pays for project resources
+. A Billing account is linked to one or more projects
+. Charged automatically or invoiced every month 
+	or at threshold limit
+. Subaccounts can be used for separate billing for projects
+
+How to keep you billing under control:
+- Budgets and alerts
+- Billling export
+- Reports
+
+Quotas are helpful limits
+	previene da un utilizzo alto 
+	che può essere provocato da un errore 
+	o da un attacco hacker.
+	Ci sono due tipi:
+Rate quota:
+	GKE API: 1000 requests per 100 seconds
+	reset after specific time
+Allocation quota:
+	5 networks per project
+
+Many quotas are changeable
+
+
+Cloud SDK:
+	. gcloud
+	. kubectl
+	. gsutil
+	. bq
+
+LAB 
+
+Storage -> create new bucket name: project_id
+
+Compute Engine -> create an instance
+name: first-vm
+zone: us-central1-c
+Boot Disk: Debian GNU/Linux 9
+Service account: Compute Engine default service account
+Allow default access
+Firewall: Allow HTTP traffic
+create
+
+IAM and Admin -> Service accounts -> create
+Service account name: test-service-account
+Role: Project editor
+Create Key: Key type: JSON
+create -> download locally
+
+Cloud Shell
+> MY_BUCKET_NAME_1=project_id
+> MY_BUCKET_NAME_2=$MY_BUCKET_NAME_1-2
+> echo $MY_BUCKET_NAME_2
+
+Upload JSON credential file
+> ls -l credentials.json
+
+Create new bucket:
+> gsutil mb gs://$MY_BUCKET_NAME_2
+
+Create VM:
+> MY_REGION=us-central1
+> gcloud compute zones list | grep $MY_REGION
+> MY_ZONE=us-central1-a
+> gcloud config set compute/zone $MY_ZONE
+> MY_VMNAME=second-vm
+> gcloud compute instances create $MY_VMNAME --machine-type "n1-standard-1" --image-project "debian-cloud" --image-family "debian-9" --subnet "default" 
+
+> gcloud compute instances list
+
+Create Service Account:
+> gcloud iam service-accounts create test-service-account2 --display-name "test-service-account2"
+
+Diamo al Service Account il Project Viewer Role:
+> gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member serviceAccount:test-service-account2@{GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com --role roles/viewer
+
+Copiamo un'immagine esterna in un bucket:
+> gsutil cp gs://cloud-training/ak8s/cat.jpg cat.jpg
+
+> gsutil cp cat.jpg gs://$MY_BUCKET_NAME_1
+
+> gsutil cp gs://$MY_BUCKET_NAME_2/cat.jpg gs://$MY_BUCKET_NAME_2/cat.jpg 
+
+> gsutil acl set private gs://$MY_BUCKET_NAME_1/cat.jpg
+
+> gcloud config list
+
+> gcloud auth activate-service-account --key-file credentials.json
+
+> gcloud config list
+
+> gsutil cp gs://$MY_BUCKET_NAME_1/cat.jpg ./cat-copy.jpg
+-> private exception
+
+> gsutil cp gs://$MY_BUCKET_NAME_2/cat.jpg ./cat-copy.jpg
+
+Let's change who were authenticated as back to our GCP account.
+> gcloud config set account gnarlkjn_student@qwiklabs.net
+> gsutil cp gs://$MY_BUCKET_NAME_1/cat.jpg ./cat-copy.jpg
+-> works!
+
+> gsutil iam ch allUsers:objectViewer gs://$MY_BUCKET_NAME_1
+Adesso possiamo verificare che l'immagine nel bucket ha un link pubblico di accesso.
+
+Nell'editor di Cloud Shell vediamo i file:
+cat-copy.jpg, cat.jpg, copy2-of-cat.jpg,
+credentials_(1).json, credentials.json
+
+Cloniamo un repository git:
+> git clone https://github/googlecodelabs/orchestrate-with-kubernetes.git
+
+creaiamo un file html che contiene l'immagine del gatto dentro alla home directory 
+
+copiamo tale file nella VM
+installiamo prima un web server nella VM
+quindi entriamo nella SSH della VM
+> sudo apt-get update
+> sudo apt-get install nginx
+
+Torniamo in Cloud Shell e spostiamo il file html nella vm:
+> gcloud compute scp index.html firs-vm:index.nginx-debian.html --zone=us-central1-c
+
+Torniamo in SSH:
+spostiamo il file dalla home directory
+alla nginx's document root directory
+> sudo cp index.nginx-debian.html /var/www/html
+
+Cliccando sull'external IP della VM
+che contiene il web server nginx
+nel quale abbiamo messo come home page
+il file html che punta all'immagine del gatto..
+vediamo il gatto!
+
+
+_________________________________________________________
+INTRODUCTION TO CONTAINERS AND KUBERNETES
+
+--Hypervisors create and manage virtual machines
+
+Dedicated server
+	Application code
+	Dependencies
+	Kernel
+	Hardware
+
+Virtual machine
+	Application code
+	Dependencies
+	Kernel
+	Hardware + Hypervisor
+
+--Running multiple apps on a single VM
+
+Dedicated server
+	Application code
+	Dependencies
+	Kernel
+	Hardware
+x 2
+
+Virtual machine
+	App1 App2
+	Dependencies
+	Kernel
+	Hardware + Hypervisor
+
+
+--The VM-centric way to solve this problem
+
+Virtual machine
+	Application code
+	Dependencies
+	Kernel
+	
+Virtual machine
+	Application code
+	Dependencies
+	Kernel
+
+Hardware + Hypervisor
+
+
+--User space abstraction and containers
+
+Virtual machine
+	
+	Container:
+	- Application
+	- User Space
+	- Dependencies
+
+	Container:
+	- Application
+	- User Space
+	- Dependencies
+
+	Container Runtime
+	Kernel
+	Harware + Hypervisor
+
+Image: Application + Dependency
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
