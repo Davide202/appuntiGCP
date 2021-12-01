@@ -284,6 +284,355 @@ Virtual machine
 
 Image: Application + Dependency
 
+Containers use a varied set of Linux technologies:
+	Processes
+	Linux namespaces
+	cgroups
+	Union fine systems
+
+Esempio di Dockerfile
+	
+	FROM ubuntu:18.04
+	COPY ./app
+	RUN make /app
+	CMD python /app/pp.py
+
+Cloud Build
+	
+	from:
+	- Cloud Storage
+	- git repository
+	- Cloud Source Repositories
+
+	to:
+	. Cloud Functions
+	. GKE
+	. App Engine
+
+You can upload the container in the Container Registry.
+
+_________________________________________________________
+LAB - Working with Cloud Build
+
+Controllare che 
+Cloud Build API e Container Registry API siano abilitati
+cercando in:
+Navigation menu -> APIs & Services -> Dashboard -> Enable APIs and Services
+
++ Building containers with Dockerfile and Cloud Build
+da Cloud Shell:
+
+
+> nano quickstart.sh
+#!/bin/sh
+echo "Hello, world! The time is $(date)."
+
+Save the file and close nano by pressing the CTRL+X key, then press Y and Enter.
+
+
+> nano Dockerfile
+FROM alpine
+COPY quickstart.sh /
+CMD ["/quickstart.sh"]
+
+Save the file and close nano by pressing the CTRL+X key, then press Y and Enter.
+
+In Cloud Shell, run the following command to make the quickstart.sh script executable.
+
+> chmod +x quickstart.sh
+
+In Cloud Shell, run the following command to build the Docker container image in Cloud Build.
+
+> gcloud builds submit --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/quickstart-image .
+
+Don't miss the dot (".") at the end of the command. The dot specifies that the source code is in the current working directory at build time.
+
+
+In the Google Cloud Console, on the Navigation menu (Navigation menu), click Container Registry > Images.
+
+The quickstart-image Docker image appears in the list
+
+
+---
++ Building Containers with a build configuration file and Cloud Build
+
+Cloud Build also supports custom build configuration files. In this task you will incorporate an existing Docker container using a custom YAML-formatted build file with Cloud Build.
+
+In Cloud Shell enter the following command to clone the repository to the lab Cloud Shell.
+
+> git clone https://github.com/GoogleCloudPlatform/training-data-analyst
+
+Create a soft link as a shortcut to the working directory.
+
+> ln -s ~/training-data-analyst/courses/ak8s/v1.1 ~/ak8s
+
+Change to the directory that contains the sample files for this lab.
+
+> cd ~/ak8s/Cloud_Build/a
+
+A sample custom cloud build configuration file called cloudbuild.yaml has been provided for you in this directory as well as copies of the Dockerfile and the quickstart.sh script you created in the first task.
+
+In Cloud Shell, execute the following command to view the contents of cloudbuild.yaml.
+
+> cat cloudbuild.yaml
+
+You will see the following:
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/quickstart-image', '.' ]
+images:
+- 'gcr.io/$PROJECT_ID/quickstart-image'
+
+
+This file instructs Cloud Build to use Docker to build an image using the Dockerfile specification in the current local directory, tag it with 
+
+gcr.io/$PROJECT_ID/quickstart-image 
+
+($PROJECT_ID is a substitution variable automatically populated by Cloud Build with the project ID of the associated project) and then push that image to Container Registry.
+
+In Cloud Shell, execute the following command to start a Cloud Build using cloudbuild.yaml as the build configuration file:
+
+> gcloud builds submit --config cloudbuild.yaml .
+
+The build output to Cloud Shell should be the same as before. When the build completes, a new version of the same image is pushed to Container Registry.
+
+In the Google Cloud Console, on the Navigation menu (Navigation menu), click Container Registry > Images and then click quickstart-image.
+
+Two versions of quickstart-image are now in the list.
+
+In the Google Cloud Console, on the Navigation menu (Navigation menu), click Cloud Build > History.
+
+Two builds appear in the list.
+
+Click the build ID for the build at the top of the list.
+
+The details of the build, including the build log, are displayed.
+
++ Building and Testing Containers with a build configuration file and Cloud Build
+
+The true power of custom build configuration files is their ability to perform other actions, in parallel or in sequence, in addition to simply building containers: running tests on your newly built containers, pushing them to various destinations, and even deploying them to Kubernetes Engine. In this lab, we will see a simple example: a build configuration file that tests the container it built and reports the result to its calling environment.
+
+In Cloud Shell, change to the directory that contains the sample files for this lab.
+
+> cd ~/ak8s/Cloud_Build/b
+
+As before, the quickstart.sh script and the a sample custom cloud build configuration file called cloudbuild.yaml has been provided for you in this directory. These have been slightly modified to demonstrate Cloud Build's ability to test the containers it has build. There is also a Dockerfile present, which is identical to the one used for the previous task.
+
+In Cloud Shell, execute the following command to view the contents of cloudbuild.yaml.
+
+> cat cloudbuild.yaml
+You will see the following:
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/quickstart-image', '.' ]
+- name: 'gcr.io/$PROJECT_ID/quickstart-image'
+  args: ['fail']
+images:
+- 'gcr.io/$PROJECT_ID/quickstart-image
+
+In addition to its previous actions, this build configuration file runs the quickstart-image it has created. In this task, the quickstart.sh script has been modified so that it simulates a test failure when an argument ['fail'] is passed to it.
+
+In Cloud Shell, execute the following command to start a Cloud Build using cloudbuild.yaml as the build configuration file:
+
+> gcloud builds submit --config cloudbuild.yaml .
+
+You will see output from the command that ends with text like this:
+
+Output (do not copy)
+
+Finished Step #1
+ERROR
+ERROR: build step 1 "gcr.io/ivil-charmer-227922klabs-gcp-49ab2930eea05/quickstart-image" failed: exit status 127
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ERROR: (gcloud.builds.submit) build f3e94c28-fba4-4012-a419-48e90fca7491 completed with status "FAILURE"
+
+Confirm that your command shell knows that the build failed:
+
+> echo $?
+
+The command will reply with a non-zero value. If you had embedded this build in a script, your script would be able to act up on the build's failure.
+
+End your lab
+____________________________________________________________
+
+	CONTAINER MANAGEMENT
+
+Kubernetes is a container centric management environment.
+Google originated id and then donated it to the open source community.
+Now it's a project of the vendor neutral Cloud Native Computing Foundation.
+
+It automates the deployment, scaling, load balancing,
+logging, monitoring, and other management features of
+containerized applications.
+These are the features that are characteristic of a typical
+Platform as a Service (PaaS) solutions.
+
+Kubernetes also facilitates the fewatures of an infrastucture as a service,
+souch as allowing a wide range of user preferences and configuration flexibility.
+
+Kubernetes supports declarative configurations.
+When you administer your infrastructure declaratively,
+you describe the desired state you want to achieve,
+instead of issuing a series of commands to achieve the desired state.
+
+Kubernete's job is to make the deployed system conform to
+your desired state and the keep it there in spite of failures.
+Declarative configuration saves you work,
+because the system is desired state is always documented.
+It also reduces the risk of error.
+
+Communities also allows imperative configuration in which
+you issue commands to change the system state,
+but administering kubernetes that scale imeratively
+will be a big missed opportunity.
+
+One of he primary strengths of kubernetes is its ability
+to automatically keep a system in a stat that you declare.
+Experience Kubernetes administators use imperative configuration
+only for quick temporary fixes and as a tool in building a declarative configuration.
+
+	KUBERNETES FEATURES
+1- Supports both stateful and stateless applications,
+	batch jobs and deamon tasks.
+2- Autoscaling
+3- Resource limits
+4- Extensibility
+5- Portability
+
+Introducing to Google Kubernetes Engine
+
+Kubernets is powerful, but managing the infrastructure is a full-time job.
+
+Google Kubernets Engine is a managed service for Kubernetes within Google Cloud.
+
+GKE will help you deploy, manage and scale kubernetes environments
+for your containerized application on GCP.
+More specifically, GKE is a component of the GCP compute offering,
+it makes i easy to bring your kubernetes workloads into the cloud.
+
+GKE is fully managed,
+which means that you don't have to provision the underlying resources.
+GKE uses a container optimize operating system.
+These operating systems are maintained by Google,
+are optimized to scale quickly and with a minimal resource footprint.
+
+When you use GKE,
+you start by directing the service to instantiate a kubernetes system for you.
+This system is called a cluster.
+GKE is auto upgrade feature is enabled to ensure that your clusters are automatically upgraded with 
+the latest and greatest version of kubernetes.
+
+The virtual machines that host your containers inside of the GKE cluster are called NODES.
+If you enable GKE auto repair feature,
+the service will automatically repair unhealthy nodes for you.
+It will make periodic health checks on each node in the cluster.
+If a node is determined to be unhealthy and requires repair,
+GKE will drain the node.
+In other words, it will cause its workload to gracefully exit
+and then recreate that node.
+
+Just as kubernetes supprts scaling workloads,
+GKE supports scaling the cluster itself.
+GKE seamlessly integrates with Google Cloud Build
+and Container Registry.
+This allows you to automate deployment using private container images 
+that you've securely stored in contaner registry.
+
+GKE also integrates with Google's Identity and Access Management (IAM),
+which allows you to control access through the use of the accounts and role permissions.
+
+Stackdriver is Google Cloud System for monitoring and management for services, containers,  applications and infrastructure.
+GKE integrates with Stackdriver monitoring to help you understand your application's performance.
+GKE is integradet with Google Virtual Private Cloud (VPC)
+and makes use of GCO networking features.
+
+The GCP Console provides insights into GKE clusters
+and resources and allows you to view inspect and delete resources in those clusters.
+
+You might be aware that open source kubernetes contains a dashboard, 
+it takes a lot of work to set it up securely
+but the GCP Console is a Dashboard for your GKE clusters and workloads
+that you don't have to manage
+and it's more powerful that the kubernetes dashboard.
+
+
+	Comparing Google Cloud computing solutions
+
+Compute Engine: IaaS
+	fully customizable virtual machines
+	persistent disks and optiona local SSDs
+	global load balancing and autoscaling
+	per-second billing
+	use cases:
+		1- complete control over the OS and virtual hardware
+		2- well suited for lift-and-shift migrations to the cloud
+		3- most flexible compute solution, often used when a managed solution is too restrictive
+	--
+	Long-lived VMs
+	Physical servers
+	One container per VM
+
+GKE: Hybrid
+	fully managed kubernete platform
+	supports cluster scaling, persistent disks, automated upgrades and auto node repairs.
+	built-in integration with Google Cloud services
+	portability across multiple environments:
+	- hibrid computing
+	- multi-cloud computing
+	use cases:
+	1- containerized applications
+	2- Cloud-native distributed systems
+	3- Hybrid applications
+	--
+	rich administration of container workloads
+	on-premises kubernetes
+
+App Engine: PaaS
+	provides a fully managed, code-first platform.
+	stramlines application deployment and scalability
+	provides support for popular programming languages and application runtimes
+	you can also run container workloads
+	supports integrated monitoring, logging,  diagnostics.(Stackdriver)
+	simplifies version control, canary testing and rollbacks.
+	use cases:
+	1- website
+	2- mobile app and gaming backends
+	3- RESTful APIs
+	--
+	containers run by the service
+	no-ops
+
+Cloud Run: Stateless
+	enables stateless containers
+	abstracts away infrastructure management
+	automatically scales up and down
+	Open API and runtime environment
+	use cases:
+	1- deploy stateless containers that listen for requests or events
+	2- build applications in any language using any frameworks and tools 
+	--
+	staeless container
+	managed
+
+
+Cloud Functions: Server logic
+	event-driven, serverless compute service
+	automatic scaling with highly available and fault-tolerant desing
+	charges apply only when your code runs
+	triggered based on events in Google Cloud services, HTTP endpoints and Firebase
+	use cases:
+	1- supporting microservice architecture
+	2- serverless application backends
+		mobile and IoT backends
+		integrate with third-party services and APIs
+	3- intelligent applications
+		virtual assistant and chat bots
+		video and image analysis
+	--
+	no-ops
+
 
 
 
