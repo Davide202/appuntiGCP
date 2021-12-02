@@ -4674,9 +4674,9 @@ create a Job
 	main class or jar: org.apache.spark.examples.SparkPi
 	arguments: 1000
 	jar files: file:///usr/lib/spark/esamples/jars/spark-examples.jar
-	
 
 
+GKE IN AppuntiKubernetes.txt
 
 
 
