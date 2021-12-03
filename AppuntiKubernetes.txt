@@ -1023,6 +1023,182 @@ Controller object types:
 - DaemonSet
 - Job
 
+Deployments are grat choice for long lived software components like web servers, especilly when we want to manage them as a group.
+
+In our example, when cube scheduler schedules pods for a deployment,
+it notifies the kube-APIserver.
+These changes are constantly monitored by controllers,
+especially by the deployment controller.
+The deployment controller will monitor and maintain three nginx pods.
+
+If one of those pods fails,
+the deployment controller will recognize the difference between the current state and the desired state
+and we'll try to fix it, by launching a new pod.
+
+Instead if using multiple YAML manifest or files for each pod, you use a single deployment yaml to launch three replicas of the same container.
+
+A deployment insurers that a defined set of pods is running at any given time.
+Within its objects back, you specify how many replica pods you want,
+how pods should run
+which containers should run within these pods
+and which volumes should be mounted.
+
+Based on these templates, controllers maintain the pods
+desired state within a cluster.
+
+--
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+--
+
+Deployments can alos do a lot more than this,
+which you will see later.
+
+
+
+
+
+Allocating resource quotas
+
+Multiple projects run on a single cluster
+how can I allocate resource quotas??
+
+Kubernetes allows you to abstract a single physical cluster into multiple clusters
+known as "name spaces".
+Name spaces provide scope for naming resources such as pods, deployments and controllers.
+
+Il name space di default è "Default".
+Your workload resources will use this name space by default (Pods, Deployments).
+
+Di default esistono anche altri due name space:
+
+"Kube-system" name space for objects created by the kubernets system itself (ConfigMap, Secrets, Controllers, Deployments).
+
+When you use a "kubectl" command, by default items in the "kube-system" name space are excluded,
+but you can choose to view its contents explicitly.
+
+"kube-public" name space for object that are publicly readable to all users.
+kube-public is a tool for disseminating information to 
+everything running in a cluster,
+you're not required to use it, bu it can come in handy
+especiallywhen everything running in a cluster is 
+relaed to the same goal and needs information in common.
+
+Best practice tip: namespace-neutral YAML
+You can appl a resource to a name space when creating it
+using a command line name space flag or 
+you can specify a name space in the yaml file for the resource.
+Whenever possible, apply name spaces at the command line level!!!
+This practice makes your yaml files ore flexible.
+
+For example
+
+kubectl -n demo apply -f mypod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+  namespaces: demo
+
+-----------
+
+A note about Deployments and ReplicaSets
+The example nginx Deployment you saw in the previous video was simplified. In practice, you
+would launch a Deployment object to manage your desired three nginx Pods, just as the video
+described. Note, though, that the Deployment object would create a ReplicaSet object to
+manage the Pods. The diagram in the video leaves out this detail.
+You will work with Deployment objects directly much more often than ReplicaSet objects. But
+it's still helpful to know about ReplicaSets, so that you can better understand how Deployments
+work. For example, one capability of a Deployment is to allow a rolling upgrade of the Pods it
+manages. To perform the upgrade, the Deployment object will create a second ReplicaSet
+object, and then increase the number of (upgraded) Pods in the second ReplicaSet while it
+decreases the number in the first ReplicaSet.
+
+
+A note about Services
+Services provide load-balanced access to specified Pods. There are three primary types of
+Services:
+● ClusterIP: Exposes the service on an IP address that is only accessible from within this
+cluster. This is the default type.
+● NodePort: Exposes the service on the IP address of each node in the cluster, at a
+specific port number.
+● LoadBalancer: Exposes the service externally, using a load balancing service provided by
+a cloud provider.
+In Google Kubernetes Engine, LoadBalancers give you access to a regional Network Load
+Balancing configuration by default. To get access to a global HTTP(S) Load Balancing
+configuration, you can use an Ingress object.
+You will learn more about Services and Ingress objects in a later module in this learning path.
+
+
+Controller objects to know about
+This reading explains the relationship among several Kubernetes controller objects:
+● ReplicaSets
+● Deployments
+● Replication Controllers
+● StatefulSets
+● DaemonSets
+● Jobs
+A ReplicaSet controller ensures that a population of Pods, all identical to one another, are
+running at the same time. Deployments let you do declarative updates to ReplicaSets and Pods.
+In fact, Deployments manage their own ReplicaSets to achieve the declarative goals you
+prescribe, so you will most commonly work with Deployment objects.
+Deployments let you create, update, roll back, and scale Pods, using ReplicaSets as needed to
+do so. For example, when you perform a rolling upgrade of a Deployment, the Deployment object
+creates a second ReplicaSet, and then increases the number of Pods in the new ReplicaSet as it
+decreases the number of Pods in its original ReplicaSet.
+Replication Controllers perform a similar role to the combination of ReplicaSets and
+Deployments, but their use is no longer recommended. Because Deployments provide a helpful
+"front end" to ReplicaSets, this training course chiefly focuses on Deployments.
+If you need to deploy applications that maintain local state, StatefulSet is a better option. A
+StatefulSet is similar to a Deployment in that the Pods use the same container spec. The Pods
+created through Deployment are not given persistent identities, however; by contrast, Pods
+created using StatefulSet have unique persistent identities with stable network identity and
+persistent disk storage.
+If you need to run certain Pods on all the nodes within the cluster or on a selection of nodes, use
+DaemonSet. DaemonSet ensures that a specific Pod is always running on all or some subset of
+the nodes. If new nodes are added, DaemonSet will automatically set up Pods in those nodes
+with the required specification. The word "daemon" is a computer science term meaning a
+non-interactive process that provides useful services to other processes. A Kubernetes cluster
+might use a DaemonSet to ensure that a logging agent like fluentd is running on all nodes in the
+cluster.
+The Job controller creates one or more Pods required to run a task. When the task is completed,
+Job will then terminate all those Pods. A related controller is CronJob, which runs Pods on a
+time-based schedule.
+Later modules in this learning path will cover these controllers in more depth.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
