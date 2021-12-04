@@ -1182,19 +1182,606 @@ time-based schedule.
 Later modules in this learning path will cover these controllers in more depth.
 
 
+LAB - Deploying Google Kubernetes Engine
+
+ on the Navigation menu, click Kubernetes Engine > Clusters.
+
+ Click Create to begin creating a GKE cluster. In the GKE Standard cluster option select configure in the next screen.
+
+ Change the cluster name to standard-cluster-1 and zone to us-central1-a. Leave all the values at their defaults and click Create.
+
+ Modify GKE clusters
+It is easy to modify many of the parameters of existing clusters using either the Google Cloud Console or Cloud Shell. In this task, you use the Google Cloud Console to modify the size of GKE clusters.
+
+In the Google Cloud Console, click NODES at the top of the details page for standard-cluster-1.
+In Node Pools section and click default-pool.
+In the Google Cloud Console, click RESIZE at the top of the Node Pool Details page.
+Change the number of nodes from 3 to 4 and click RESIZE.
+
+In the Google Cloud Console, on the Navigation menu, click Kubernetes Engine > Clusters.
+When the operation completes, the Kubernetes Engine > Clusters page should show that standard-cluster-1 now has four nodes.
+
+Deploy a sample workload
+In this task, using the Google Cloud console you will deploy a Pod running the nginx web server as a sample workload.
+
+In the Google Cloud Console, on the Navigation menu( Navigation menu), click Kubernetes Engine > Workloads.
+Click Deploy to show the Create a deployment wizard.
+
+Click Continue to accept the default container image, nginx:latest, which deploys 3 Pods each with a single container running the latest version of nginx.
+
+Scroll to the bottom of the window and click the Deploy button leaving the Configuration details at the defaults.
+When the deployment completes your screen will refresh to show the details of your new nginx deployment.
+
+
+_____________________________________________
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "nginx-1"
+  namespace: "default"
+  labels:
+    app: "nginx-1"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "nginx-1"
+  template:
+    metadata:
+      labels:
+        app: "nginx-1"
+    spec:
+      containers:
+      - name: "nginx-1"
+        image: "nginx:latest"
+---
+apiVersion: "autoscaling/v2beta1"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "nginx-1-hpa-ofkc"
+  namespace: "default"
+  labels:
+    app: "nginx-1"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "nginx-1"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: "Resource"
+    resource:
+      name: "cpu"
+      targetAverageUtilization: 80
+_________________________________________________
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-12-03T09:57:11Z"
+  generation: 1
+  labels:
+    app: nginx-1
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app: {}
+      f:spec:
+        f:progressDeadlineSeconds: {}
+        f:replicas: {}
+        f:revisionHistoryLimit: {}
+        f:selector: {}
+        f:strategy:
+          f:rollingUpdate:
+            .: {}
+            f:maxSurge: {}
+            f:maxUnavailable: {}
+          f:type: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app: {}
+          f:spec:
+            f:containers:
+              k:{"name":"nginx-1"}:
+                .: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+            f:dnsPolicy: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext: {}
+            f:terminationGracePeriodSeconds: {}
+    manager: GoogleCloudConsole
+    operation: Update
+    time: "2021-12-03T09:57:11Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:deployment.kubernetes.io/revision: {}
+      f:status:
+        f:availableReplicas: {}
+        f:conditions:
+          .: {}
+          k:{"type":"Available"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Progressing"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+        f:observedGeneration: {}
+        f:readyReplicas: {}
+        f:replicas: {}
+        f:updatedReplicas: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2021-12-03T09:57:18Z"
+  name: nginx-1
+  namespace: default
+  resourceVersion: "3934"
+  uid: 648f7fda-f12a-4151-ab4b-5830d4852dfe
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nginx-1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-1
+    spec:
+      containers:
+      - image: nginx:latest
+        imagePullPolicy: Always
+        name: nginx-1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 3
+  conditions:
+  - lastTransitionTime: "2021-12-03T09:57:18Z"
+    lastUpdateTime: "2021-12-03T09:57:18Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2021-12-03T09:57:11Z"
+    lastUpdateTime: "2021-12-03T09:57:18Z"
+    message: ReplicaSet "nginx-1-754ddbcd6c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  updatedReplicas: 3
+
+______________________________________________________
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-12-03T09:57:11Z"
+  generateName: nginx-1-754ddbcd6c-
+  labels:
+    app: nginx-1
+    pod-template-hash: 754ddbcd6c
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"85665bd0-452d-419b-9f3d-69ea2ebeebd7"}:
+            .: {}
+            f:apiVersion: {}
+            f:blockOwnerDeletion: {}
+            f:controller: {}
+            f:kind: {}
+            f:name: {}
+            f:uid: {}
+      f:spec:
+        f:containers:
+          k:{"name":"nginx-1"}:
+            .: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:terminationGracePeriodSeconds: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2021-12-03T09:57:11Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.8.3.3"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: kubelet
+    operation: Update
+    time: "2021-12-03T09:57:18Z"
+  name: nginx-1-754ddbcd6c-zl8g9
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: nginx-1-754ddbcd6c
+    uid: 85665bd0-452d-419b-9f3d-69ea2ebeebd7
+  resourceVersion: "3932"
+  uid: 3c5140ef-eb92-4652-a40e-43537e713c48
+spec:
+  containers:
+  - image: nginx:latest
+    imagePullPolicy: Always
+    name: nginx-1
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-glnzt
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-standard-cluster-1-default-pool-0c0e9925-dg52
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-glnzt
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-03T09:57:11Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-03T09:57:18Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-03T09:57:18Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-03T09:57:11Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://18d10412673093c15e425517362849a76b4ef6351da197569504eb5e7c367e32
+    image: docker.io/library/nginx:latest
+    imageID: docker.io/library/nginx@sha256:9522864dd661dcadfd9958f9e0de192a1fdda2c162a35668ab6ac42b465f0603
+    lastState: {}
+    name: nginx-1
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2021-12-03T09:57:17Z"
+  hostIP: 10.128.0.5
+  phase: Running
+  podIP: 10.8.3.3
+  podIPs:
+  - ip: 10.8.3.3
+  qosClass: BestEffort
+  startTime: "2021-12-03T09:57:11Z"
+-_____________________________________________________
 
 
 
+Migrate for Anthos
+
+Migrate for Anthos moves VMs to containers,
+existing applications into a kubernetes environments.
+The best thing about this is the process is automated.
+
+Your workloads can be on premises or another cloud providers.
+
+Moves workload compute to container immediately (<10min).
+
+Data can be migrated all at once or "streamed" to the cloud intil the app is live in the cloud.
+___________________________________________________
+Migrate for Compute Engine
+	Migrate Manager (Compute Engine)
+	Edge Nodes (Compute Engine)
+	Cache (Cloud Storage)
+
+on-premises/cloud
+	Local Compute
+	Local Compute
+	Local Compute
+
+Migrate for Anthos
+	Processing Cluster (GKE)
+		CRD
+		SC
+		CSI
+		....
+____________________________________________________
+
+First, let's inspect the archiecture required for migration.
+The first step is to allow Migrate for Compute Engine
+to create a pipeline for streaming or migrating the data from on premises or another cloud provider into Google Cloud.
+
+Migrate for Compute Engine is a tool that allows you to 
+bring you existing applications into VMs on Google Cloud.
+
+Migrate for Anthos is then installed on GKE processing cluster
+and is composed of many Kubernetes resources.
+Migrate for Anthos is used to generate deployment artifacts.
+Some of these artifacts, like your kubernetes configurations
+and the Docker files are used to create the VM wrapping container.
+This container goes into Cloud Storage,
+the container images themselves are stored in the Container Registry.
+
+After the deployment assets are created,
+they can be used to deploy your application into a target cluster.
+You simply apply the generator configuration and
+it creates all the necessary Kubernetes elements on the target cluster.
+
+A Migration is a multi-step processor
+
+First configure processing cluster,
+you need to create processing cluster.
+
+After that you install the Migrate for Anthos components
+onto that cluster.
+
+Next you need add a migration source.
+You can migrate from VMware, AWS, Azure or Google Cloud.
+
+Generate and review plan.
+You will need to create a migration object
+with the details of the migration that you're performing.
+This will generate a plan template for you in a yaml file.
+You may need to alter this configuration file to create the level of customization that you desire.
 
 
+Generate artifacts.
+When the plan is ready, you will need to generate 
+the artifacts for the migration.
+This means generating the container images of your applications
+and the yaml file is required for the deployment.
 
+Test.
+After your migration artifacts have been generated,
+they need to be tested.
+Both the container images and the deployments will be tested at this stage.
 
+Deploy.
+Finally, if the tests are successful,
+you can use the generated artifacts to deploy your application 
+into your production clusters.
 
+Example:
 
+Setup the processing cluster:
 
+> gcloud container --project $PROJECT_ID 
+	cluster create $CLUSTER_NAME
+	--zone $CLUSTER_ZONE
+	--username "amdin"
+	--cluster-version 1.14
+	--machine-type "n1-standard-4"
+	--image-type "UBUNTU"
+	--num-nodes 1
+	--enable-stackdriver-kubernetes
+	--scopes "cloud-platform"
+	--enable-ip-alias
+	--tags="http-server"
 
+Before you run the command,
+you need to make sure that you are a GKE admin to setup the cluster.
 
+You also must have firewall rules in place to allow communications between Migrate for Anthos 
+and Migrate for Compute Engine.
 
+After all that's done,
+you can create the pocessing cluter.
+
+The example enables a VPC native cluster.
+
+When the processing cluster is up and running,
+you need to install Migrate for Anthos
+using the command:
+
+> migctl sutup install
+
+This command installs all of the required Kubernetes resources onto the processing cluster for the migration.
+
+Adding a source enables migrations from a specific environment
+
+> migclt source create ce my-ce-src 
+	--project my-project 
+	--zone zone
+
+The migctl source create command specifies the location
+of the application to migrate.
+
+The example is from migrating from Google Compute Engine.
+
+If you're migrating from a VMware backend or another Cloud Provider,
+you need to install some additiona packeages.
+
+Now that the infrastructure elements are setup,
+the next step is to create a migration plan.
+
+> migctl migration create test-migration
+	--source my-ce-src
+	--cm-id my-id
+	--intent Image
+
+The migctl migration create command will create the migration plan.
+This command will define the migration resources to be crerated on the cluster.
+You identify the source VM and what data to exclude from the migration.
+You can also specify what migration intense you want.
+
+You can specify the following intense:
+image, image data, data or PV-based container.
+The output of this command is a yaml file that can be further customized.
+
+After creating a migration plan,
+you will need to generate the artifacts for the migration.
+
+> migctl migration generate-artifacts my-migration
+
+The migctl migration generate-artifacts command 
+will start this process.
+
+This process will first copy files and directories
+representing the VM to a container image registry as images.
+
+Migrate for Anthos creates two images,
+a reliable image for deployment ino anothe cluster and
+a non reliable image layer that can be used to update the container image in the future.
+
+Next, Migrate for Anthos will generate configuration yaml files that you use to deploy the VM to another GKE cluster.
+
+These are copied into a Cloud Storage Bucket
+as an intermediate location.
+
+> migctl migration get-artifacts test-migration
+
+You run the migctl migration get-artifacts command
+to download the yaml configuration files generated from the last step.
+
+The yaml configuration defines the resources to deploy, such as you are creating a deployment or a stateful set.
+
+Is the deployment of headless service?
+Are you using persistent volumes or persistent volume claims?
+
+You can edit the yaml file to customize your deployment.
+Examples of customization include enabling load balancing, allowing ingress or defining this size.
+
+> kubectl apply -f deployment_spec.yaml
+
+Finally, you run the kubectl apply command to deploy
+the defined specification.
+
+Summary
+
+Kubernetes controllers keep the cluster state matching the desired state.
+
+Kubernetes consists of a family of control plane components,
+running on the control plane and the nodes.
+
+GKE abstracts away the control plane.
+
+Declare the state you want using manifest files.
 
 
 
