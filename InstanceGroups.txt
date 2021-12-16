@@ -1,0 +1,123 @@
+COMPUTE ENGINE - INSTANCE GROUPS
+
+
+
+
+gruppo di istanze di VM gestite come una singola entità
+hanno lo stesso template 
+ce ne sono due tipologie:
+
+.MANAGED: identiche VM create utilizzando un instance template
+features: Load Balancer,Auto Scaling, Auto Healing and Managed Releases
+
+.UNMANAGED: Different configuration for VMs in the same group
+does not offer auto scaling, auto healing and other services
+not recommended unless you need different kinds of VMs
+
+The Location of an instance group can be Zonal or Regional 
+Regional gives higher availability
+ 
+ 
+MANAGED INSTANCE GROUPS (MIG)
+identical VMs created using an instance template
+
+Load Balancer to distribute load,
+
+Auto Scaling to increase and decrease instances based on load, 
+
+Self Healing: detect application failures using health checks
+
+Managed Releases, release new application versions without downtime,
+	
+	Rolling updates: release new versions step by step, update a percentuage of instances to the new version at a time, 
+	Optional Specify a template for canary testing
+	when: immediately(proactive) or when group is resized later(opportunistic)
+	
+	Rolling Restart/replace: gradual restart or replace of all instances in the group 
+	
+	Canary Deployment: test new version with a group of instances before releasing it across all instances.
+	
+Creating Managed Instance Group 
+da una Instance Template creiamo un Instance Group stateless
+bisogna scegliere il tipo di Autoscaling(auto, non auto, only up)
+autoscaling based on CPU utilization, HTTP load balancing utilization, Stackdriver
+Cool down period 
+Creiamo un health check (protocollo HTTP, check interval, healthy threshold)
+
+
+gcloud compute instances create my-test-vm 
+	--source-instance-template=my-instance-template-with-custom-image
+
+gcloud compute instance-groups managed list
+
+gcloud compute instance-groups managed delete my-managed-instance-group
+
+gcloud compute instance-groups managed create my-mig 
+	--zone us-central1-a 
+	--template my-instance-template-with-custom-image 
+	--size 1
+	--health-check=HEALT_CHECK
+	--initial-delay
+
+gcloud compute instance-groups managed delete/describe/list/update 
+
+gcloud compute instance-groups managed set-autoscaling my-mig 
+	--max-num-replicas=10 
+	--min-num-replicas=2
+	--mode(off/on(default)/only-scale-out)
+	--zone us-central1-a
+	--cool-down-period (default 60 secs)
+	--scale-based-on-cpu  
+		--target-cpu-utilization  
+		--scale-based-on-load-balancing  
+		--target-load-balancing-utilization
+
+gcloud compute instance-groups managed stop-autoscaling my-mig 
+	--zone us-central1-a
+	
+	
+	RESIZE AND RECREATE INSTANCES
+gcloud compute instance-groups managed resize my-mig 
+	--size=1 --zone=us-central1-a
+	
+gcloud compute instance-groups managed recreate-instances my-mig 
+	--instances=my-mig-85fb,my-instances-2	
+	--zone us-central1-a
+	
+gcloud compute instance-groups managed delete my-managed-instance-group 
+	--region=us-central1
+
+gcloud compute instance-groups managed update my-mig 
+	--instances=my-instance-1,my-instances-2 
+	--minimal-actio=none(default)/refresh/replace/restart 
+	--most-disruptive-allowed-action=none(default)/refresh/replace/restart 
+	
+gcloud compute instance-groups managed set-instance-template my-mig 
+	--template=v2-template 
+	after updating instance template,
+	you can trigger roll out of the new template using "update-instances",
+	"recreate-instances" or "rolling-action start-update" commands.
+	
+	ROLLING ACTIONS
+	
+gcloud compute instance-groups managed rolling-action 
+	restart my-mig 
+	--max-surge=5 or 10% (max no of instances updated at a time)
+	
+gcloud compute instance-groups managed rolling-action 
+	replace my-mig 
+	--max-surge=5 or 10% (max no of instances updated at a time)
+	--max-unavailable=5 or 10% (max no of instances updated at a time)
+	--replacement-method=recreate/substitute 
+		(recreate creates instnces with new names.
+		substitute reuses names)
+	
+gcloud compute instance-groups managed rolling-action
+	start-update my-mig
+	--version=template=v1-template
+	
+gcloud compute instance-groups managed rolling-action
+	start-update my-mig
+	--version=template=v1-template
+	--canary-version=template=v2-template,target-size=10%
+	
