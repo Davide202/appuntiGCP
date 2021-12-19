@@ -1,0 +1,128 @@
+	LOAD BALANCING
+
+
+Distributes user traffic across instances of an application
+in single region or multiple regions
+- fully distributed, software defined managed service
+- Important Features:
+	. Health check - route to healthy instances
+					recover from failures
+	. Auto Scaling
+	. Global load balancing with single anycast IP
+		also supports internal load balancing
+Enables:
+- High Availability
+- Auto Scaling 
+- Resiliency 
+
+
+
+Protocols: HTTP, HTTPS, TCP, TLS, UDP
+
+	Application Layer (Layer 7) HTTP HTTPS SMTP (REST API nad send emails)
+	Transport Layer (Layer 4) TCP TLS UDP 
+	Network Layer (Layer 4) IP 
+
+
+NetworkLayer:
+	IP (Internet Protocol): Transfer bytes. Unreliable.
+	
+Transport Layer:
+	TCP (Trasmission Control): Reliability > Performance 
+	TLS (Transport Layer Security): Secure TCP 
+	UDP (User Datagram Protocol): Performance > Reliability
+
+Application Layer:
+	HTTP (Hypertext Transfer Protocol): Stateless Request Response Cycle
+	HTTPS: Secure HTTP 
+	SMTP: Email Transfer Protocol 
+	FTS (File Transfer Protocol)
+	
+Most applications typically communicate at application layer
+web apps/REST API(HTTP/HTTPS), Email Servers(SMTP), File Transfers(FTP)
+All of these applications use TCP/TLS at network layer (for reliability)
+However applications needing high performance directly communicat 
+at transport layer 
+Gaming applications and live video streaming use UDP 
+(sacrifice reliability for performance)
+
+
+Creating Load Balancer
+scegliamo HTTP(S) Load Balancing 
+From Internet to my VMs
+	
+	my-http-load-balancer
+	
+	Backend configuration:
+	create backend service 
+	type: Instance group
+	protocol: HTTP
+	
+	Frontend configuration
+	default
+	
+
+
+Client -> Cloud Load Balancing -> Instances (Compute Engine)
+
+Backend: group of endpoints that receive traffic from Google Cloud load balancer (example: instance group)
+
+Frontend: Specify an IP address and protocol. 
+	This IP address is the frontend IP for your clients requests.
+	
+Host and path rules (for HTTP(S) Load Balancing):
+	Defines rules redirecting the traffic to different backends
+	based on path, host, HTTP headers and methods
+	
+Load Balancing - SSL/TLS Termination/Offloading
+
+- Client to Load Balancer: Over internet
+	HTTPS recommended
+- Load Balancer to VM instance: Through Google internal network
+
+- SSL/TLS Termination/Offloading
+	. Client to Load Balancer: HTTPS/TLS
+	. Load Balancer to VM instance: HTTP/TCP 
+	
+Choosing External Load Balancer
+
+External traffic (internet)
+	1- HTTP/HTTPS traffic -> HTTP(S) Load Balancing
+	2- TCP traffic
+		SSL offloading (termination) -> SSL Proxy
+		Global LB or IPv6 -> TCP Proxy
+		Preserve Client IPs -> Network TCP/UDP Load Balancing
+	3- UDP traffic -> Network TCP/UDP Load Balancing
+	
+Internal traffic:
+	Internal IPv4 Clients -> Internal (traffic between internal IP addresses)
+	1- TCP traffic or UDP traffic -> Internal TCP/UDP Load Balancing 
+	2- HTTP or HTTPS traffic -> Internal HTTP(S) Load Balancing 
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

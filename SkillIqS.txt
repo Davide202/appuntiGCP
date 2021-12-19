@@ -1,0 +1,7 @@
+Associate Cloud Engineer
+
+Architecting with Google Cloud Platform Infrastructures
+ 
+Architecting with the Google Kubernetes Engine
+ 
+Performing Foundational Tasks in Google Cloud Platform
