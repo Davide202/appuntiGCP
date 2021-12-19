@@ -100,9 +100,7 @@ Internal traffic:
 	2- HTTP or HTTPS traffic -> Internal HTTP(S) Load Balancing 
 	
 
-
-
-
+	
 
 
 

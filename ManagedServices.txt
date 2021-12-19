@@ -1,0 +1,33 @@
+MANAGED SERVICES
+	
+Terminology:
+IaaS: infrastructure as a Service
+PaaS: platform as a service
+
+FaaS: function as a service
+CaaS: container as a service
+Serverless
+
+
+Example IaaS
+use only infrastructure from cloud provider
+using VM to deploy your applications or databases
+you are responsible for:
+- application code and runtime
+- configuring load balancing 
+- auto scaling 
+- OS upgrades and patches 
+- availability
+
+Example PaaS
+use a platform provided by coud
+Cloud provider is responsible for:
+- OS 
+- Application Runtime
+- Auto Scaling
+You are resonsible for:
+- Configuration of Application and Services
+- Application code if needed 
+Varieries: CaaS, FaaS, Databases (relational and NoSQL),
+	Queue, AI, ML, Operations
+	
