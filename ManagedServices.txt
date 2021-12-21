@@ -2,12 +2,14 @@ MANAGED SERVICES
 	
 Terminology:
 IaaS: infrastructure as a Service
-PaaS: platform as a service
 
-FaaS: function as a service
-CaaS: container as a service
+PaaS: platform as a service
+	FaaS: function as a service
+	CaaS: container as a service
+
 Serverless
 
+---
 
 Example IaaS
 use only infrastructure from cloud provider
@@ -31,3 +33,174 @@ You are resonsible for:
 Varieries: CaaS, FaaS, Databases (relational and NoSQL),
 	Queue, AI, ML, Operations
 	
+	
+	
+Container Orchestration
+- Auto Scaling: scale containers based on demand
+- Service Discovery: help microservices find another one
+- Load Balancer: distribute load among multiple instances of a microservices 
+- SelfHealing: do health checks and replace failing instances
+- Zero Downtime Deployments: release new versions without downtime.
+
+	
+	
+	
+	Serverless
+
+you don't need to worry about servers and focus on your code
+you don't worry about infrastructure 
+(zero visibility into infrastructure)
+pay for use (pay for requests)
+
+Example: 
+
+App Engine at Level 1  <- ...
+pay for number of instances running
+
+Google Function at Level 2 <- Serverless
+pay for number of requests
+
+	GCP Managed Services for Computing
+
+Compute Engine (IaaS)
+	high-performance and general purpose VMa that scale globally
+GKE (CaaS)
+	porchestrate containerized microservices on Kubernetes,
+	needs advanced cluster configuration and monitoring
+App Engine Standard environment (PaaS-Serverless)
+App Engine Flexible environment (PaaS-CaaS)
+	build highly scalable application fully managed platform using open and familiar languages and tools
+Cloud Function (FaaS, Serverless)
+	build event driven applications using simple,
+	single-purpose functions
+Cloud Run (CaaS-Serverless)
+	develop and deploy highly scalable containerized application. does not need a cluster.
+	
+	
+	
+	
+	App Engine
+simplest way to deploy and scale your applications in GCP 
+supports: Go, Java, .NET, Node.js, PHP, Python, Ruby
+features:
+	automatic load balancing and auto scaling
+	managed platform upgrades and application health monitoring
+	application versioning
+	traffic splitting 
+	
+Standard:
+applications run in languages specific sandboxes
+complete isolation from OS/Disk/Other Apps
+V1: Java, Python, PHP, Go(OLD versions)
+	Only for Python and PHP runtimes:
+		restricted network access
+		only white-listed extensions and libraries are allowed
+	No restrictions for Java and Go runtimes
+V2: Java, Python, PHP, Node.js, Ruby, Go(newer versions) 
+	full network access and no restrictions on language extensions
+	
+Flexible:
+	application instances run within Docker containers 
+	makes use of Compute Engine virtual machines
+	support ANY runtime 
+	provides access to backgroung processes and local disks 
+
+
+
+Application Component Hierarchy (App Engine)
+
+Application > Service > Version > Instance
+
+Application: One App per Project
+
+Service(s): multiple microservices or App components
+	you can have multiple services in a single application
+	each Service can have different settings 
+	earlier called Modules
+
+Versions(s): each version associated with code and configuration
+	each Version can run in one or more instances
+	multiple versions can co-exist
+	options to rollback and split traffic 
+	
+Scaling Instaces
+Automatic: automativally scale instances based on the load 
+	recommended for continuosly Running Workloads 
+	target CPU utilization - configure a CPU usage threshold
+	target throughput utilization - configure a throughput threshold
+	max concurrent requests - configure ax concurrent requests an instance can receive
+Basic: instances are created as and when requests are received
+	recommended for Adhoc Workloads
+	instances are shutdown if ZERO requests 
+	tries to keep costs low as possible 
+	high latency is possible
+	Not supported by App Engine Flexible Environment
+	configure Max Instances and Idle Timeout
+Manual: configure specific number of instances to run
+	adjust number of instances manually over time 
+	
+Shell commands:
+
+cd default-service
+gcloud config list
+gcloud config set project project_id
+
+gcloud app deploy
+gcloud app services list
+gcloud app versions list
+gcloud app instances list
+gcloud app deploy --version=v2
+gcloud app versions list
+gcloud app browse
+gcloud app browse --version 20210215t072907
+gcloud app deploy --version=v3 --no-promote
+gcloud app browse --version v3
+gcloud app services set-traffic split=v3=.5,v2=.5
+gcloud app services set-traffic splits=v3=.5,v2=.5
+watch curl https://melodic-furnace-304906.uc.r.appspot.com/
+gcloud app services set-traffic --splits=v3=.5,v2=.5 --split-by=random
+ 
+cd ../my-first-service/
+gcloud app deploy
+gcloud app browse --service=my-first-service
+ 
+gcloud app services list
+gcloud app regions list
+ 
+gcloud app browse --service=my-first-service --version=20210215t075851
+gcloud app browse --version=v2
+gcloud app open-console --version=v2
+gcloud app versions list --hide-no-traffic
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
