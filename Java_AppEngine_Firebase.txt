@@ -1,0 +1,19 @@
+Adding the App Engine Maven plugin to an existing project (optional)
+To use the Google App Engine Maven plugin in an existing Maven project, add the following into the plugins section in the project pom.xml file:
+
+
+<plugin>
+   <groupId>com.google.cloud.tools</groupId>
+   <artifactId>appengine-maven-plugin</artifactId>
+   <version>2.4.0</version>
+</plugin>
+
+<dependency>
+  <groupId>com.google.firebase</groupId>
+  <artifactId>firebase-admin</artifactId>
+  <version>8.1.0</version>
+</dependency>
+
+https://cloud.google.com/appengine/docs/standard/java/tools/uploadinganapp
+
+https://cloud.google.com/appengine/docs/standard/java/apis
