@@ -497,9 +497,20 @@ only for quick temporary fixes and as a tool in building a declarative configura
 1- Supports both stateful and stateless applications,
 	batch jobs and deamon tasks.
 2- Autoscaling
+	Service Discovery
+	Load Balancer
+	Self Healing 
+	Zero Downtime Deployment
 3- Resource limits
 4- Extensibility
 5- Portability
+
+Managed Kubernetes service
+auto-repair, auto-upgrade 
+pod and cluster autoscaling
+Cloud Logging, Cloud Monitoring 
+
+
 
 Introducing to Google Kubernetes Engine
 
@@ -1784,6 +1795,259 @@ GKE abstracts away the control plane.
 Declare the state you want using manifest files.
 
 
+gcloud config set project my-kubernetes-project-304910
+gcloud container clusters get-credentials my-cluster --zone us-central1-c --project my-kubernetes-project-304910
+	
+	
+	
+-------------------------------------------------
+
+	DEPLOYMENT 
+kubectl create deployment hello-world-rest-api 
+	--image=in28min/hello-world-rest-api:0.0.1.RELEASE
+kubectl get deployment
+	
+	LOAD BALANCER (SERVICE)
+kubectl expose deployment hello-world-rest-api 	
+		--type=LoadBalancer 
+		--port=8080
+
+kubectl get services
+kubectl get services --watch
+curl 35.184.204.214:8080/hello-world
+
+	MANUAL-SCALE
+kubectl scale deployment hello-world-rest-api 
+	--replicas=3
+kubectl get deployment 
+watch curl http://35.184.204.214:8080/hello-world
+kubectl get pods
+
+
+gcloud container clusters resize my-cluster 
+	--node-pool default-pool 
+	--num-nodes=2 
+	--zone=us-central1-c
+	
+	AUTO-SCALE
+kubectl autoscale deployment hello-world-rest-api 
+		--max=4 
+		--cpu-percent=70
+
+	HORIZONTAL AUTOSCALING 
+kubectl get hpa
+	
+	AUTOSCALE FOR CLUSTER 
+gcloud container clusters update cluster-name	
+	--enable-autoscaling
+	--min-nodes=1 
+	--max-nodes=10
+	
+	
+	CONFIGMAP 
+kubectl create configmap hello-world-config 
+			--from-literal=RDS_DB_NAME=todos
+			
+kubectl get configmap 
+
+kubectl describe configmap hello-world-config
+
+
+	SECRET 
+kubectl create secret generic hello-world-secrets-1 
+	--from-literal=RDS_PASSWORD=dummytodos
+
+	
+kubectl get secret
+kubectl describe secret hello-world-secrets-1
+
+
+kubectl apply -f deployment.yaml
+gcloud container node-pools list 
+		--zone=us-central1-c 
+		--cluster=my-cluster
+kubectl get pods -o wide
+ 
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=in28min/hello-world-rest-api:0.0.2.RELEASE
+kubectl get services
+kubectl get replicasets
+kubectl get pods
+kubectl delete pod hello-world-rest-api-58dc9d7fcc-8pv7r
+ 
+kubectl scale deployment hello-world-rest-api --replicas=1
+kubectl get replicasets
+gcloud projects list
+ 
+kubectl delete service hello-world-rest-api
+kubectl delete deployment hello-world-rest-api
+gcloud container clusters delete my-cluster --zone us-central1-c
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-name
+  name: app-name
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+	  app: hello-world-rest-api
+  template:
+    metadata:
+	  labels:
+	    app: hello-world-rest-api
+	spec:
+	  containers:
+	  - image: hello-world-rest-api:0.0.3.RELEASE
+	    name: hello-world-rest-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hello-world-rest-api
+  name: hello-world-rest-api
+  namespace: default
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+	targetPort: 8080
+  select:
+    app: hello-world-rest-api
+  sessionAffinity: None
+  type: LoadBalancer
+---
+
+Deploy a new microservice which needs nodes
+with a GPU attached
+
+Attach a new node pool with GPU instances to your cluster:
+> gcloud container node-pools create POOL_NAME 
+	--cluster CLUSTER_NAME
+	
+> gcloud container node-pools list
+	--cluster CLUSTER_NAME
+	--zone=us-central1-c
+
+Deploy the new microservice to the new pool by setting up 
+nodeSelector in the deployment.yaml
+
+- nodeSelector:cloud.google.com/gke-nodepool:POOL_NAME
+	
+Delete the Microservice
+- Delete service - kubectl delete service
+- delete deployment - kubectl delete deployment 
+
+Delete cluster
+- gcloud container clusters delete 
+
+Google Kubernetes Engine (GKE) Cluster
+
+- Cluster: Group of Compute Engine instances:
+	- Master Node(s) - manages the cluster
+	- Worker Node(s) - run your workloads (pods)
+
+- Master Node (Control plane) components:
+ - API Server - Handles all communication for K8S cluster (from nodes and outside)
+	- Scheduler - Decides placement of pods
+	- Control Manager - Manages deployments and replicasets
+	state
+
+- Worker Node components:
+	- Runs your pods
+	- Kubelet - Manages communication with master node(s) 
+ 
+Cluster Types:
+
+Zonal Cluster:
+- Single Zone - Single Control plane. Nodes running in the same zone.
+- Multi-zonal - Single Control plane but nodes running in multiple zones 
+
+Regional Cluster:	
+Replicas of the control plane runs in multiple zones 
+of a given region. 
+Nodes also run in the same zones where control plane runs.
+
+Private Cluster:
+VPC-native cluster. Nodes only have internal IP addresses
+
+Alpha Cluster:
+Clusters with alpha APIs-early feature API's. Used to test new K8S features.
+
+
+Kubernetes Pods
+
+- smallest deployable unit in Kubernetes 
+- a Pod contains one ore more containers
+- each Pod is assigned an ephemeral IP address 
+- all container in a pod share:
+	- Network
+	- Storage
+	- IP Address
+	- Ports and
+	- Volumes (Shared persisten disks) 
+- Pod statuses:
+	Running/Pending/Succeeded/Failed/Unknown 
+		
+	
+> kubectl get pods
+
+> kubectl get deployment -o wide 
+
+
+
+Deployment VS ReplicaSet 
+
+A Deployment is created for each microservice:
+> kubectl create deployment m1 --image=m1:v1 
+Deployment represents a microservice with all its releases(versions).
+Deployment manages new releases ensuring zero downtime.
+
+> kubects set image deployment hello-world-rest-api 
+	hello-world-rest-api=hello-world-rest-api:0.0.2.RELEASE
+	
+Replica Set ensures that a specific number of pods are running for a specific microservice version 
+
+> kubectl get replicasets
+> kubectl get pods
+
+> kubectl scale deployment m2 --replicas=2
+
+Even if one of the pods is killed,
+Replica Set will launch a new one.
+
+Deploy V2 of microservice - Create a new Replica Set 
+> kubectl set image deployment m1 m1=m1:v2 
+V2 Replica Set is created
+Deployment updates V1 Replica Set and V2 Replica Set based on the release strategies
+
+Kubernets - Service
+- each Pod has its own IP address:
+How do you ensure that external users are not impacted when:
+- A Pod fails and is replaced by Replica Set 
+- A new release happens and all existing pods of old release are replaced by ones of new release.
+
+- Create Service 
+> kubectl expose deployment name --type= LoadBalancer --port=80
+- Expose Pods to outside world using a stable IP Address 
+- Ensures that the external world does not get impacted as pods go down and come up
+
+- Three Types:
+	
+	1- ClusterIP: exposes Service on a cluster-internal IP
+	use case: you want your microservice only to be available inside the cluster (Intra cluster communication)
+	
+	2- LoadBalancer: exposes Service externally using a Cloud Provider's Load Balancer.
+	use case: you want to create individual Load Balancer's for each microservice.
+	
+	3- NodePort: Exposes Service on each Node's IP at a static port (NodePort) 
+	use case: you do not want to create an external Load Balancer for each microservice, you can create one Ingress component to load balance multiple microservice.
+	
 
 
 
@@ -1793,3 +2057,19 @@ Declare the state you want using manifest files.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
