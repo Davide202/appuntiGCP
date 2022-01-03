@@ -2049,12 +2049,134 @@ How do you ensure that external users are not impacted when:
 	use case: you do not want to create an external Load Balancer for each microservice, you can create one Ingress component to load balance multiple microservice.
 	
 
+Container Registry - Image Repository
+fully-managed container registry provided by GCP 
+Alternative Docker Hub
+Can be integrated to CI/CD tools to publish images to registry. 
+You can secure your container images.
+Analyze for vulnerabilities and inforce deployment policies.
+Naming: HostName/ProkectID/Image:Tag-gcr.io/projectname/helloworld:1
 
+Remember:
+Replicate master nodes across multiple zones for high availability.
+Some CPU on the nodes is reserved by Control Plane:
+1st core - 6%
+2nd core - 1%
+3rd/4th core - 0.5%
+Rest - 0.25%
 
+Creating Docker Image for your microservices(Dockerfile)
+	Build Image: docker build -t image:version
+	Test id Locally: docker run -d -p 8080:8080 image:version
+	Push it to Container Repository: docker push image:version
+	
+Kubernetes supports Stateful deployments like Kafka, Redis, ZooKeeper
+StatefulSet - Set of Pods with unique persistent identities and stable hostname
 
+How do we run services on nodes for log collection or monitoring?
+DaemonSet - One Pod on every node for backfround ervices
 
+Enabled by default - Integrates with Cloud Monitoring and Cloud Logging.
+Cloud Logging System and Application Logs 
+can be exported to BigQuery or Pub/Sub.
 
+You want to keep your costs low and optimize your GKE implementation:
+consider Preemptible VMs, appropriate region,
+committed-use discount.
+E2 machine types are cheaper than N1.
+choose right environment to fit your workload type 
+(use multiple node pools if needed).
 
+Auto scaling GKE solution:
+configure horizontal Pod autoscaler for deployments
+and Cluster Autoscaler for node pools.
+
+You wanto to execute untrusted third-party code in Kubernetes Cluster:
+create a new node pool with GKE Sandbox.
+Deploy untrusted code to Sandbox node pool.
+
+You want enable ONLY internal communication between your microservice deployments in a Kubernetes Cluster:
+Create Service of type ClusterIP.
+
+My Pod stays pending:
+Most probably Pod cannot be scheduled onto a node 
+(insufficient resources).
+
+My Pod stays waiting:
+Most probably failure to pull the image.
+
+Command Line
+
+Create Cluster:
+> gcloud container clusters create my-cluster
+	--zone us-central1-a
+	--node-locations us-central1-a,us-central1-b
+	
+Resize Cluster:
+> gcloud container clusters resize my-cluster
+	--node-pool my-node-pool
+	--num-nodes 10
+	
+Autoscale Cluster:
+> gcloud container clusters update cluster-name 
+	--enable-autoscaling 
+	--min-nodes=1
+	--max-nodes=10 
+
+Delete Cluster 
+> gcloud container clusters delete my-cluster 
+
+Adding Node Pool:
+> gcloud container node-pools create new-node-pool-name
+	--cluster my-cluster 
+	
+List Images in container registry:
+> gcloud container images list 
+
+Description:
+> kubectl get pods/services/replicasets
+
+Create Deployment:
+> kubectl apply -f deployment.yaml 
+> kubectl create deployment 
+
+Create service:
+> kubectl expose deployment hello-world-rest-api
+	--type=LoadBalancer
+	--port=8080
+	
+Scale Deployment:
+> kubectl scale deployment hello-world 
+	--replicas 5
+	
+Autoscale Deployment:
+> kubectl autoscale deployment 
+	--max 10
+	--min 1
+	--cpu-percent 80
+	
+Delete Deployment:
+> kubectl delete deployment hello-world 
+
+Update Deployment:
+> kubectl apply -f deployment.yaml 
+
+Rollback Deployment 
+> kubectl rollout undo deployment hello-world
+	--to-revision=1
+	
+Delete everything:
+> kubectl delete service hello-world-rest-api
+> kubectl delete deployment hello-world-rest-api
+
+> gcloud projects list 
+> gcloud config set project VALUE 
+
+> gcloud container clusters delete my-cluster 
+	--zone us-central1-c 
+
+Connect to a Kubernetes Cluster:
+> gcloud container clusters get-credentials 
 
 
 
