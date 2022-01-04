@@ -5,3 +5,275 @@ Google Cloud Platform
 -------------------------------
 ------- Cloud KMS -------------
 -------------------------------
+
+Data at rest: Stored on a device or a backup
+
+examples: data on a hard disk, in a database, backups and archives
+
+Data in motion: Being trasferred across a network
+
+examples: data copied from on-premise to Cloud Storage
+An application talking to a database
+
+Two Types:
+- In and out of Cloud (from internet)
+- Within Cloud 
+
+Data in use: Active data processed in a non-persistent state
+
+example: Data in your RAM
+
+Encryption
+
+Symmetric Key Encryption
+Symmetric encryption algorithms use the same key
+for encryption and decryption
+Key Factor 1: Choose the right encrypt algorithm 
+Key Factor 2: How do we secure the encryption key?
+Key Factor 3: How do we share the encryption key?
+
+Asymmetric Key Encryption 
+Two Keys: Public Key and Private Key
+Also callsed Public Key Cryptography
+Encrypt data with Public Key and decrypt with Private Key
+Share Public Key with everyBody and keep the Private Key with you.
+
+Will somebody not figure out private key using the public key? in few years.
+
+Cloud KMS
+Create and manage cryptographic keys (symmetric and asymmetric)
+Control their use in your applications and GCP Services
+Provides an API to encrypt, decrypt or sign data
+Use existing cryptographic keys created on premises
+
+Integrates with almost all GCP services that need data encryption:
+- Google-managed key: No configuration required
+- Customer-managed key: Use key from KMS
+- Customer-supplied key: Provide your own key.
+
+Esempio
+In Security, Creiamo un Key Ring con una chiave simmetrica.
+Da Compute Engine, 
+nella creazione di una VM in Disks, sezione Encryption, possiamo selezionare le opzioni:
+- Google-managed key 
+- Customer-managed key <- SELECT
+- Customer-supplied key
+
+Selezioniamo quindi la chiave precedentemente creata.
+Otteniamo un warning:
+il Service Account non ha il permesso di encrypt/decrypt con la chiave selezionata.
+La console ci fornisce il pulsante per garantire tale permesso.
+
+-----------------------------------------------
+---------- Storage ----------------------------
+-----------------------------------------------
+
+Block Storage 
+Harddisks attached to your computers
+Tipically, ONE Block Storage device can be connected to ONE virtual server.
+Exception: 
+	you can attach read-only block devices wtih
+	multiple virtual servers and 
+	certain cloud providers are exploring multi-writer disks as well.
+	
+File Storage
+Media workflows need huge shared storage for suppporting processes like video editing.
+Enterprise users need a quick way to share files in a secure and organized way
+These file shared are shared by several virtual servers
+
+GCP - Block Storage and File Storage 
+
+--Block Storage: (Boot Disk of VM)
+Persistent Disks: Network Block Storage attached to your VM instance
+	Zonal: Data replicated in one zone
+	Regional: Data replicated in multiple zone
+	. More durable
+	. Lifecycle NOT tied to VM instance 
+	
+	. Provisioned capacity 
+	Very Flexible: 
+	. Increase size when you need it - when attached to VM instance.
+	. Performance scales with size 
+	for higher performance, resize or add more PDs
+	. Indipendent lifecycle from VM instance 
+	attach/detach from one VM instance to another
+	use case: run your custom database.
+		
+	
+Local SSDs: Local Block Storage
+	are physically attached to the host of the VM instance
+	. Temporary data (caches, scratch files) 
+	. Lifecycle tied to VM instance 
+	. provide very high (IOPS) and very low latency
+	. Ephemeral storage - Temporary data (Data persist only until instance is running).
+	Enable live migration for data to survive maintenance events.
+	. DAta automatically encrypted
+	however, you cannot configure encryption keys.
+	. Only some machine types support Local SSDs
+	. Support SCSI and NVMe interfaces
+	. Choose NVMe-enabled and multi-queue SCSI images for best performance.
+	. Larger Local SSDs (more storage), More vCPU (attached to VM) => Even Better Performance
+
+--File Storage:
+Filestore: High performance file storage 
+An instance is a fully manaed network-attached storage system
+you can use with your Google Compute Engine
+and Kubernetes Engine instances.
+
+Compare Persistent Disks VS Local SSDs
+
+PDs are attached to VM as a network drive
+SSDs are physically attached 
+Lifecycle, PDs - separate from VM instance
+			SSDs - tied with VM instance 
+PD lower I/O speed (network latency)
+SSDs 10-100x of PDs 
+PDs support Snapshot, SSD don't support Snapshot
+PD Permanent storage, SSD Ephemeral storage 
+
+---------------------------------------------
+	Types of Persistent Disks 
+- Balanced persistent disk
+- SSD persistent disk
+- Standard persistent disk 
+
+
+
+
+
+---------------------------------------
+	Persistent Disks - Snapshots
+----------------------------------------------
+- Take point-in-time snapshots of your Persistent Disks 
+- You can also schedule snaphsots, also auto-delete after x days.
+- Snapshots can be Multi-regional and Regional
+- You can share snaphsots across projects 
+- You can create new disks and instances from snapshots.
+- Snapshots are incremental
+- Keep similar data together on a Persistent Disk:
+Separate your operating system, volatile data and permanent data. 
+Attach multiple disks if needed.
+This helps to better organize your snaphsots and images.
+
+Avoid taking snapshots more often than once an hour.
+Disk volume is available for use but Snapshots reduce performace, schedule snaphsots during off-peak hours.
+
+Creating snapshots from disk is faster than creating from images:
+but creating disks from image is faster than creating from snapshots.
+Recommended: if you are repeatedly creating disks from a snapshot: 
+create an image from snapshot and use the image to create disks. 
+
+Snapshots are incremental:
+But you don't lose data by deleting older snapshots.
+Deleting a snapshot only deletes data which is NOT needed by other snapshots.
+Recommended: Do not hesitate to delete unnecesary snaphsots.
+
+DEMO
+Create a VM with with the default boot persistent disk Debian.
+When the instance is up and running,
+go in the VM instance details:
+a boot disk is attached of type: 
+	Balanced persistent disk.
+
+Uncheck: Delete boot disk when instance is deleted
+
+In Compute Engine, Disks,
+from the disk in use by VM instance, you can create a snapshot.
+You can create then an instance from snapshot.
+You can can also create a snapshot schedule and then configure the disk using that snapshot schedule.
+
+
+
+
+----------------------------------------------
+	Machine Images
+----------------------------------------------
+Remember: Machine Image is different from Image
+
+An Image contains an Operating System
+and is used for boot up the VM.
+
+Machine Image is much more than Image: 
+- Multiple disks can be attached with a VM:
+	. One Boot Disk (Your OS runs from Boot Disk)
+	. Multiple Data Disks 
+- An Image is created from the Boot Persistent Disk 
+
+- HOWEVER, a Machine Image is created from a VM Instance:
+	. Machine Image contains everything you need to create a VM instace:
+	Configuration, Metadata, Permissions, Data from one or more disks.
+	
+- Machine Images are Remommended for disk backups,
+instance cloning and replication.
+
+
+----------------------------------------------
+	Comparing:
+		Machine Image
+		Persistent disk Snapshot 
+		Custom Image 
+		Instance Template
+		
+----------------------------------------------
+
+Single disk backup:
+	Machine Image: yes
+	Persistent disk Snapshot: yes 
+	Custom Image: yes 
+	Instance Template: no 
+
+Multiple disk backup:
+	Machine Image: yes
+	Persistent disk Snapshot: no 
+	Custom Image: no 
+	Instance Template: no 
+
+Differential backup:
+	Machine Image: yes
+	Persistent disk Snapshot: yes 
+	Custom Image: no 
+	Instance Template: no 
+
+Instance cloning and replication:
+	Machine Image: yes
+	Persistent disk Snapshot: no
+	Custom Image: yes 
+	Instance Template: yes
+
+VM instance configuration:
+	Machine Image: yes
+	Persistent disk Snapshot: no
+	Custom Image: no 
+	Instance Template: yes 
+
+
+----------------------------------------------
+	Disks - Command Line
+----------------------------------------------
+
+> gcloud compute disks list/create/delete/resize/snapshot 
+
+> gcloud compute disks create my-disk-1
+	--zone=us-east1-a 
+	--size=1GB
+	--type=pd-standard
+	--image --image-family 
+	--source-disk 
+	--source-snapshot
+	--kms-key --kms-project 
+	
+> gcloud compute disks resize disk-1
+	--size=6TB 
+	--zone=us-east1-a 
+
+> gcloud compute disks snapshot test 
+	--zone=us-east1-a 
+	--snapshot-names=snapshot-test 
+	
+
+
+
+
+
+
+
