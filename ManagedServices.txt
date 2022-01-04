@@ -77,9 +77,11 @@ Cloud Run (CaaS-Serverless)
 	develop and deploy highly scalable containerized application. does not need a cluster.
 	
 	
+-----------------------------------------------
+------------|| App Engine ||-------------------
+-----------------------------------------------	
 	
 	
-	App Engine
 simplest way to deploy and scale your applications in GCP 
 supports: Go, Java, .NET, Node.js, PHP, Python, Ruby
 features:
@@ -183,14 +185,94 @@ gcloud app browse --version=v2
 gcloud app open-console --version=v2
 gcloud app versions list --hide-no-traffic
 
+-----------------------------------------------
+------------||Google Funcitons||---------------
+-----------------------------------------------
 
-Google Funcitons
+Imagine you want to execute some code when an event happens:
+- a file is uploaded in Cloud Storage
+- An errore log is written to Cloud Logging
+- A message arrives to Cloud Pub/Sub
 
+Enter Cloud Functions 
+Run code in response to events
+Write your business logic in:
+Node.js, Python, Go, Java, .NET, Ruby 
+Don't worry about servers or scaling or availability 
+only worry about your code.
 
+Pay only for what you use:
+- number of invocations
+- comute time of the invocations 
+- amount of memory and CPU provisioned 
 
+Time Bound - default 1 min and MAX 9 minutes 
+Each executions runs in  separate instance.
 
+Concepts
 
+Event: upload object to cloud storage
 
+Trigger: respond to event with a Function called
+	Trigger - which function to trigger when an event happens
+	Functions - take event data and perform action
+	
+Events are triggered from:
+	Cloud Storage
+	Cloud Pub/Sub
+	HTTP POST/GET/DELETE/PUT/OPTIONS 
+	Firebase
+	Cloud Firestore
+	Stack driver logging
+	
+No Server Management: You don't need to worry about scaling or availability of your function.
+Cloud Functions automatically spin up and back down in response to events. They scale horizontally.
+Cloud Funcitons are recommended for reponding to events:
+	- Cloud Functions are NOT ideal for long running processes
+	- Time Bound: Default 1 min and MAX 9 minutes.
+	
+
+-----------------------------------------------
+------------|| Google Cloud Run ||-------------------
+-----------------------------------------------
+
+Container to Production in Seconds
+
+E' sufficiente configurare
+l'immagine del container,
+Ingress(allow all traffic,  from Load Balancing, internal traffic),
+
+Authentication,
+
+Cloud Run
+- Built in on top of an open standard - Knative
+- Fully managed serverless platform for containerized applications. Zero infrastructure management.
+- Fully integrated end-to-end developer experience:
+	no limitations in languages, binaries and dependdencies
+	easily portable because of container based architecture
+	Cloud Code, Cloud Build, Cloud Monitoring, Cloud Logging Integrations.
+	
+		Anthos - Run Kubernetes clusters anywhere
+Cloud, Multi Cloud, On-Premises
+
+		Cloud Run for Anthos
+Deploy your workloads to Anthos clusters running on-premises or on Google Cloud.
+
+Command line for Cloud Run 
+
+Deploy a new container:
+> gcloud run deploy SERVICE_NAME
+	--image	IMAGE_URI
+	--revision-suffix v1
+	
+List available revisions:
+> gcloud run revisions list
+
+Adjust traffic assignments:
+> gcloud run services update-traffic myservice
+	--to-revisions=v2=10,v1=90
+	
+	
 
 
 
