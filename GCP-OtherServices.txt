@@ -266,10 +266,869 @@ VM instance configuration:
 	--size=6TB 
 	--zone=us-east1-a 
 
+Crea lo snapshot del disco:
 > gcloud compute disks snapshot test 
 	--zone=us-east1-a 
 	--snapshot-names=snapshot-test 
 	
+> gcloud compute snapshots list/describe/delete 
+
+----------------------------------------------
+	Images - Command Line
+----------------------------------------------
+
+> gcloud compute images create/delete/deprecate/describe/export/import/list/update 
+
+> gcloud compute images create my-image 
+	--source-disk-zone=us-east1-a
+	--source-snapshot=...
+	--source-image=...
+	--source-image-project=... 
+	(per copiare l'immagine da un progetto ad un'altro)
+
+> gcloud compute images deprecate IMAGE 
+	--state=DEPRECATED 
+	
+Export virtual disk images:
+> gcloud compute images export 
+	--image=my-image 
+	--destination-uri=gs://my-bucket/my-image.vmdk 
+	--export-format=vmdk 
+	--project=my-project 
+	
+> gcloud compute images delete my-image1 my-image2 
+
+
+------------------------
+
+Improve performance of PD:
+increase size of PD or add more PDs.
+increase vCPUs in your VM.
+
+Increase durability of PD:
+regional PDs
+
+Hourly backup PD:
+schedule hourly snapshots.
+
+Delete old snapshots:
+schedule deleting snapshots after specific time period.
+
+----------------------------------------------
+	Cloud Filestore
+----------------------------------------------
+
+Shared cloud file storage:
+	supports NFSv3 protocol
+	provisioned capacity 
+	
+Suitable for high performance workload:
+up to 320 TB with throughput of 16GB/s and 140K IOPS 
+
+Supports HDD and SSD 
+
+Use cases: file share, media workflows and content management.
+
+----------------------------------------------
+	Global, Regional and Zonal Resources 
+----------------------------------------------
+
+Global:
+	Images
+	Snapshots 
+	Instance templates 
+Regional:
+	Regional managed instance groups 
+	Regional persistence disks 
+Zonal:
+	Zonal managed instance groups 
+	Instances 
+	Persistent disks 
+		you can attach a disk only to instances in the same zone as the disk 
+	
+----------------------------------------------
+	Storage 
+----------------------------------------------
+for very high IOPS but data can be lost without a problem: Local SSDs 
+
+for high performance file sharing system in GCP witch can be attached with multiple VMs: Filestore 
+
+backup your VM configuration along with all its attached Persistent Disks: create a Machine Image 
+
+make it easy to launch VMs with hardened OS and customized software: create a Custom Image 
+
+
+----------------------------------------------
+	Cloud Storage 
+----------------------------------------------
+could be regional, dual-regional, multi-regional 
+
+classes(frequency): 
+	standard	frequently access, 
+	nearline	once a month, 
+	coldline	once a quarter, 
+	archive		less than once a year                 
+define storage class at bucket level
+or at object level 
+
+across storage classes:
+high durability 
+low latency 
+unlimited storage 
+same APIs 
+committed SLA is 99.95% for multi-region, 99.9% for single region 
+no committed SLA for archive.
+
+serverless: autoscaling and infinite scale 
+
+store large objects using a key-value approach 
+	treats entire object as a unit 
+	partial updates not allowed 
+
+also called Object Storage 
+
+provides REST API to access and modify objects 
+provides CLI and Client libraries (C++, Java,...)
+
+Store all file types: text, binary, backup and archives:
+	media files and archives, application packages and logs.
+	backups of your databases or storage devices 
+	staging data during on-premise to cloud database migration 
+	
+Objects are stored in buckets 
+	bucket names are globally unique 
+	bucket names are used as part of object URLs so can contain ONLY lower case letters, numbers, hyphens, underscores and periods.
+	3 to 63 characters
+	
+	unlimited objects in a bucket 
+
+Each object is identified by a unique key 
+	key is unique in a bucket 
+	
+Max Objet size is 5TB 
+
+UPLOADING:
+-simple upload:		small files + no object metadata
+-multipart upload: 	small files + object metadata 
+-resumable upload: 	larger files RECOMMENDED for most use cases, even one additional HTTP request.
+-streaming transfer	upload an object of unknown size 
+-parallel composite uploads:	file divided up to 32 chunks and uploaded in parallel. significantly faster if network and disk speed are not limiting factors.
+
+
+DOWNLOADING:
+-simple download: 	downloading objects to a destination 
+-streaming download: 	downloading data to a process 
+- sliced object download: 	slice(dividere) and download large objects. 
+
+OBJECT VERSIONING
+prevents accidental deletion and provides history 
+enabled at bucket level 
+live version is the latest version 
+	if you delete live object, it becomes noncurrent object version 
+	if you deete noncurrent object version, it is deleted 
+older versions are uniquely identified by: object key + generation number.
+reduce costs by deleting older (noncurrent) versions.
+
+LIFECYLE
+moving files automatically between storage classes 
+identify object using conditions based on:
+	age, created before, is live, matches storage class, number of newer versions etc 
+	set multiple conditions 
+two kinds of actions:
+	1- SetStorageClass ations(change from one storage class to another) 
+	2- Deletion actions (delete objects)
+
+Allowed transitions:
+- Standard or Multi-Regional or Regional to Nearline or Coldline or Archive 
+- Nearline to Coldline or Archive 
+- Coldline to Archive 
+
+Rules are specified by JSON files.
+
+ENCRYPTION
+Cloud Storage always encryots data on the server side.
+Configure Server-side encryption: encryption performed by Cloud Storage 
+	- Google-management key is the default (no configuration required) 
+	- Customer-managed encryption keys, created using Cloud Key Managementt 
+		Cloud Storage Service Account should have access to keys in KMS for encrypting and decrypting using Customer_managed encryption key.
+
+Optional: Client side encryption, encryption performed by customer defore upload.
+	GCP does not know about the keys used.
+	
+
+Cloud Storage from Command Line 
+set project:
+gcloud config set project MY-PROJECT 
+
+create a bucket 
+gsutil mb gs://my-bucket-name 
+
+list in bucket 
+gsutil ls -a gs://my-bucket-name 
+
+copy:
+gsutil cp gs://bucket1/obj gs://bucket2/obj 
+	-o 'GSUtil:encryption_key=ENCRYPTION_KEY 
+
+move:
+gsutil mv gs://bucket1/obj gs://bucket2/obj 
+si può spostare anche all'interno dello stesso bucket cambiando nome dell'oggetto 
+
+change storage class:
+gsutil rewrite -s STORAGE_CLASS gs:/my-bucket/obj 
+
+upload and dowload:
+gsutil cp LOCAL_LOCATION gs://DESTINATION-BUCKET-NAME/ 
+gsutil cp gs://DESTINATION-BUCKET-NAME/ LOCAL_LOCATION
+
+versioning:
+gsutil versioning set on/off gs://bucket-name 
+
+access control:
+gsutil uniformbucketlevelaccess set on/off gs://bucket-name 
+
+gsutil acl ch -u AllUsers:R gs://bucket-name/obj (R=read)
+(set access permissions for specific objects)
+
+gsutil acl ch -u john@example.com:WRITE gs://bkt/obj 
+	Permissions: READ(R), WRITE(W), OWNER(O) 
+	Scope: User, allAuthenticatedUsers, allUsers(-u), 
+	Group(-g), Project(-p) etc 
+gsutil acl set JSON_FILE gs://bkt 
+
+gsutil iam ch MBR_TYPE:MBR_NAME:IAM_ROLE gs://bkt (Setup IAM role) 
+
+gsutil iam ch user:me@myemal.com:objectCreator gs_//bkt 
+
+gsutil iam ch allUser:objectViewer gs://bkt 
+(make entire bucket readable)
+
+gsutil signurl -d 10m YOUR_KEY gs://bkt/obj 
+(signed URL for temporary access) 
+
+------------------------------------------------------
+		Cloud IAM 
+------------------------------------------------------
+
+IAM = Identity and Access Management 
+
+Roles: A set of permissions to perform specific actions on specific resources 
+ 
+1- Choose a Role with right permissions (Storage Object Admin)
+2-  Create a Policy binding member with role (permissions) 
+
+Roles are Permissions:
+perform some set of actions on some set of resources.
+
+There are three types of roles:
+1- Basic Roles (or Primitive Roles): Owner/Editor/Viewer
+	Viewer: Read-only actions
+	Editor: Viewer + Edit actions 
+	Owner: Editor + Manage Roles and Permissions + Billing 
+	
+2- Predefined Roles: fine grained roles predefined and managed by Google.
+
+3- Custom Roles 
+
+Policy: Assign Permissions to Members 
+Policy Maps		 Roles, Members and Conditions
+
+Remember: Permissions are NOT directly assigned to Member, permissions are represented by a Role, Member gets permissions through Role. 
+
+Roles are assigned to users through IAM Policy documents, 
+represented by a policy object 
+- policy object has list of bindings 
+- a binding, binds a role to list of members 
+Member type is identified by prefix:
+- example: user, serviceaccount, group or domain  
+
+
+IAM - COMMAND LINE
+
+gcloud compute project-info describe
+
+gcloud auth list
+
+gcloud projects get-iam-policy project_id
+	
+	USER
+gcloud projects add-iam-policy-binding project_id 
+	--member=user:in28minutes@gmail.com 
+	--role=roles/storage.objectAdmin
+	
+	SERVICE ACCOUNT 
+gcloud projects add-iam-policy-binding housequot --member=serviceAccount:housequot-ms@housequot.iam.gserviceaccount.com --role=roles/pubsub.editor
+	
+	
+gcloud projects remove-iam-policy-binding project_id 
+	--member=user:in28minutes@gmail.com 
+	--role=roles/storage.objectAdmin
+
+gcloud iam roles describe roles/storage.objectAdmin
+
+gcloud iam roles copy 
+	--source=roles/storage.objectAdmin 
+	--destination=my.custom.role 
+	--dest-project=glowing-furnace-304608
+
+gcloud compute project-info describe 
+gcloud auth login 
+gcloud auth revoke 
+gcloud auth list 
+
+gcloud projects		add-iam-binding (add IAM policy binding)
+					get-iam-policy (get IAM policy for a project)
+					remove-iam-policy-binding 
+					set-iam-policy 
+					delete (delete a project)
+
+gcloud iam 	roles describe roles/storage.objectAdmin 
+			roles create 
+				--project ... 
+				--permissions ... 
+				--stage ...
+			roles copy 
+				--source=roles/storage.objectAdmin 
+				--destination=my.custom.role 
+				--dest-project=project_id 
+				
+				
+	SERVICE ACCOUNTS 
+
+An application on a VM needs access to Cloud Storage.
+The Service Account is identified by an email address,
+does not have password,
+has a private/public RSA key-pairs.
+
+Service Account types:
+- Default Service Account (editor)       
+- User Managed Service Account 
+- Google-managed service account 
+
+	---
+Use a Service Account by the VM:
+1- create a Service Account Role with right permissions 
+2- Assign Service Account role to the VM 
+
+Uses Google Cloud-managed keys:
+ key generations and use automatically handled by IAM when we assigno a service account to the instance.
+ 
+ Do not delete service accounts used by running instances: applications running on those instances will lose access.
+ 
+	---
+ Use a Service Account from on-prem Machine:
+- You cannot assign Service Account directly to an On Prem App 
+1. Create a Service Account with right permissions 
+2. Create a Service Account User Managed key  
+
+gcloud iam service-accounts keys create 
+
+3. Make the service account key file accessible to your application,
+set environment variable GOOGLE_APPLICATION_CREDENTIALS:
+export GOOGLE_APPLICATION_CREDENTIALS="/PATH_TO_KEY_FILE" 
+4. Use Google Cloud Client Libraries 
+Google Cloud Client Libraries use a library - Application Default Credentials (ADC),
+ADC uses the service account key file if env var GOOGLE_APPLICATION_CREDENTIALS_CREDENTIALS exists.
+
+	---
+Use a Service Account On Prem for Google Cloud APIs (Short Lived) 
+
+- Make calls from outside GCP to Google Coud APIs with short lived permissions.
+- Credentials Tyoes:
+	OAuth 2.0 access tokens 
+	OpenID Connect ID tokens 
+	Self-signed JSON Web Tokens (JWTs) 
+	
+Examples:
+- When a member needs elevated permissions, he can assume the service account role (Create OAuth 2.0 token for service account) 
+- OpenID Connect ID tokens is recommended for service to service authentications: 
+A service in GCP need to authenticate itself to a service in other cloud.
+
+-------------------------
+Application on a VM wants to talk to a Cloud Storage bucket:
+configure the VM to use a Service Account with right permissions.
+
+Applicaiton on a VM wants to put a message on a Pub Sub Topic:
+same 
+
+Is Service Account an identity or  a resource?
+It is both. You can attach roles with Service Account (identity). You can let other members access a SA by granting them a role on the Service Account.
+
+VM instance with default service account in project A needs to access Cloud Storage bucket in Project B:
+In project B, add the service account from project A and assign Storage Object Viewer Permission on the bucket.
+
+
+
+------------------------------------------------------
+
+	Cloud Storage - ACL (Access Control Lists)
+------------------------------------------------------
+
+ACL define who has access to your buckets and objects as well as what level of access they have.
+
+How is this different from IAM?
+IAM permissions apply to all objects within a bucket,
+ACLs can be used to cutstomized specific accesses to different objects.
+
+User gets access if he is allowewd by either IAM or ACL.
+
+Use IAM for common permissions to all objects in a bucket;
+Use ACLs if you need to customize access to individual objects. 
+
+
+How do you control access to objects in a Cloud Storage bucket?
+
+- Uniform - bucket level access using IAM 
+- Fine-grained - use IAM and ACLs to control access
+
+Use Uniform access when all users have same level of access across all objects in a bucket 
+
+Fine grained access with ACLs can be used when you need to customize the access at an object level. 
+
+
+---------------------------------------------------
+	Cloud Storage - Signed URL 
+---------------------------------------------------
+Allow a user limited time access to your objects:
+users do not need Google accounts,
+use Signed URL functionality:
+a URL that give permissions for limited time duration to perform duration to perform specific actions 
+
+To create a Signerd URL:
+1. Create a key for the Service Account/User with the desired permissions 
+2. Create Signed URL with the key:
+
+gsutil signurl -d 10m YOUR_KEY gs://bucket-name/object-path 
+
+----------------------------------------------------
+Expose a static web site using Cloud Storage.
+
+1. Create a bucket with the same name as website name,
+name of bucket should match DNS name of the website.
+Verify that the domain is owned by you.
+
+2. Copy the files to the bucket.
+Add index and error html files for better user experience
+
+3. Add member allUsers and grant Storage Object Viewer option
+
+-----------------------------------------------------
+	DATABASES 
+-----------------------------------------------------
+
+Databases provide organized and persistent storage for your data.
+
+To choose between different database types, we would need to understand:
+Availability, Durability, RTO, RPO, Consistency, Transactions, etc 
+
+	Database - Snaphots 
+Automate taking copy of the database (take a snapshot) every hour to another data center in London.
+
+	Database - Transaction Logs 
+Add transaction logs to database and create a process to copy it over to the second data center.
+
+	Database - Standby 
+Add a standy database in the second data center with replication and synchronous replication from wich take snapshots.
+
+You can switch to the standby database,
+you don't lose data if the database crashes,
+database won't be slow when you take snapshots.
+
+---
+
+RTO and RPO
+
+how do we measure how quickly we can recover from failure?
+	RPO (Recovery Poin Objective): maximum acceptable period of data loss 
+	RTO (Recovery Time Objective): maximum acceptable downtime 
+	
+Esempio: 
+la VM storicizza i dati in un persistent data storage. Prendi uno snapshot ogni 48 ore. 
+Se la VM va in crash, la puoi ripristinare in 45 minuti.
+	RTO: 45 minuti 
+	RPO: 48 ore 
+	
+---------------------------
+
+	Reporting and Analytics Applications
+
+Abbiamo un'applicazione "normale" più un'applicazione "reporting and analytics" che condividono lo stesso database, quest'ultima legge solo.
+Questa situazione crea una diminuzione di prestazioni del database. 
+
+Soluzioni:
+- Vertically scale the database - increase CPU and Memory
+- Create a database cluster (Distribute the database) - Tipically database cluster are expensibe to setup.
+- Create read replica - run read only applications against read replicas:
+	. Add read replica 
+	. Connect reporting and analytics applications to read replica 
+	. Reduces load on the master database 
+	. Upgrade read replica to master database (supported by some databases).
+	. Create read replicas in multiple regions (optional)
+	. Take snapshots from read replicas.
+	Gli snapshots serviranno per il ripristino del database principale, prendendoli dal database secondario non avranno impatti sulle performance.
+	
+	
+-----------------------------------------------------
+
+	Consistency 
+
+Strong consistency: synchronous replication to all replicas, 
+will be slow if you have multiple replicas or standys databases.
+
+Eventual consistency: Asynchronous replication,
+a little lag of few seconds before the changes is available in all replicas.
+(scalability is more important than data integrity)
+
+Read-after-Write consistency: inserts are immediately available, however update would have eventual consistency. 
+
+---------------------------------------------------------
+
+	DATABASES CATEGORY
+----------------------------------------------------------
+Factors:
+	fixed schema
+	transaction properties (atomicity and consistency)
+	latency
+	how many transaction do you expect 
+	how much data will be stored 
+
+---Relational Databases
+	predefined schema 
+	very strong transactional capabilities 
+	used for:
+	OLTP (Online Transaction Processing)
+	OLAP (Online Analytics Processing)
+	
+OLTP 
+	OLTP databases use row storage:
+		each table row is stored together 
+		efficient for processing small tranctions
+	large number of users make large number of small transacions
+	uses: banking, e-commerce 
+	
+	Cloud SQL supports PostgreSQL, MySQL, SQL Server for regional relational databases. 
+	fully managed 
+	regional service providing high availabillity 
+	use SSDs or HDDs 
+	up to 416 GB of RAM and 30 TB of data storage.
+
+
+	Cloud Spanner: Unilimited scale (multiple PBs) and high availability for global applications with horizontal scaling.
+	for huge volumes of relational data 
+	infinite scaling for a growing application 
+	need a Global Database, distribute across multiple regions,
+	need higher availability 
+	
+	
+OLAP 
+	OLAP databases use columnar storage:
+		each table column is stored together 
+		high compression - store petabytes of data efficiently
+		distribute data - one table in multiple cluster nodes
+		execute single query across multiple nodes - complex queries can be executed efficiently.
+	Applications allowing users to analyze petabytes of data 
+	esamples: reporting applications, Data ware houses, business intelligence applications, analytic system.
+	
+	BigQuery: Petabyte-scale distributed data ware house 
+	
+	
+---NoSQL Databases 
+	NoSQL = not only SQL 
+	Flexible schema 
+		structure data the way your application needs it 
+		let the schema evolve with time 
+	Horizonally scale to petabytes of data with millions of TPS 
+	Typical NoSQL databases trade-off Strong consistency and SQL features to achieve scalability and high-performance 
+
+Cloud Datastore:
+	managed serverless NoSQL documet database 
+	provides ACID transactions, SQL-like queries, indexes 
+	designed for transactional mobile and web applications
+Firestore (next version of Datastore) adds:
+	strong consistency 
+	mobile and web client libraries 
+	recommended for small to medium databases (zero to few Terabytes) 
+
+Cloud BigTable:
+	managed, scalable NoSQL wide column database 
+	not serverless (you need to create instances)
+	recommended for data size more than 10 Terabytes to several Petabytes 
+	recommended for large analytical and operational workloads:
+	NOT recommended for transactional workloads 
+	does not support multi row transactions 
+	only support  single-row transactions.
+
+---In-memory Databases 
+retrieving data from memory is much fasster than retrieving data from disk 
+in-memory databases like Redis deliver microsecond latency by storing persistent data in memory.
+
+Recommended GCP Managed Service: Memory Store 
+
+Use cases: caching, session management, gaming leader boards, geospatial applications.
+
+-------------------------------------------------------
+Databases Scenarios
+
+A start up with quickly envolving schema (table structure): 
+Cloud Datastore/Firestore 
+
+non relational db with less storage 10 gb: 
+Cloud Datastore 
+
+Transactional global database with predefined schema needing to process million of transactions per second:
+Cloud Spanner 
+
+Transactional local database processing thousands of transactions per second:
+Cloud SQL 
+
+Cache data (from database) for a web application: 
+MemoryStore 
+
+Database for analytics processing of petabytes of data:
+BigQuery 
+
+Database for storing 
+	huge volumes data from IOT devices and 
+	huge streams of time series data:
+BigTable 
+
+--------------------------------------------------------
+
+# Cloud SQL
+gcloud sql connect my-first-cloud-sql-instance --user=root --quiet
+gcloud config set project glowing-furnace-304608
+gcloud sql connect my-first-cloud-sql-instance --user=root --quiet
+use todos
+
+create table user (id integer, username varchar(30) );
+describe user;
+insert into user values (1, 'Ranga');
+select * from user;
+ 
+# Cloud Spanner
+CREATE TABLE Users (
+  UserId   INT64 NOT NULL,
+  UserName  STRING(1024)
+) PRIMARY KEY(UserId);
+ 
+ 
+# Cloud BigTable
+bq show bigquery-public-data:samples.shakespeare
+ 
+gcloud --version
+cbt listinstances -project=glowing-furnace-304608
+echo project = glowing-furnace-304608 > ~/.cbtrc
+cat ~/.cbtrc
+cbt listinstances
+
+Cloud SQL Features 
+
+automatic encryption (tables and backup)
+high availability and failover:
+	create a standby with automatic failover 
+	pre requisites: automated backups and binary logging 
+read relicas for read workloads 
+	options: cross-zone, cross-region and external( NON Cloud SQL DB)
+	Pre requisites: automated backups and Binary logging 
+automatic storage increase without downtime (for newer versions) 
+Point-in-time recovery: enable binary logging 
+Backups (automated and on-demand backups)
+Supports migration from other sources 
+	use database migration service (DMS)
+You can export data from UI console or gcloud with formats: SQL and CSV. 
+
+
+Cloud Spanner 
+fully managed, mission critical, relationa SQL,
+globally distributed database with very high availability, 
+strong transactional consistency at global scale,
+scales to PBs of data with automatic sharding.
+
+Cloud Spanner scales horizonally for and writes
+consfigure no of nodes 
+REMEMBER in comparison, Cloud SQL provides read replicas: BUT you cannot horizontally scale write operations with Cloud SQL.
+
+Cloud Spanner has Regional and Multi-Regional configuration.
+It is very Expensive (compared to Cloud SQL): Pay for nodes and storage.
+Data Exort: Use Cloud Console to export data,
+other option is to use Dataflow to automate export from CS to other DB.
+
+
+---------------------------------------------
+
+Cloud Datastore and Firestore
+
+Datastore
+highly scalable NoSQL Document Database 
+automatically scales and partitions data as it grows
+recommended for up to TBs of data, for bigger volumes BigTable is recommended.
+Supports Transactions, Indexes and SQL like queries (GQL)
+Does not support Joins or Aggregate (sun or count) operations
+for use cases needing flexible schema with transactions: User Profile and Product Catalogs 
+Structure: Kind > Entity (Use namespaces to group entities)
+You can export data ONLY from gcloud (NOT from cloud console)
+Export contains a metadata fuile and a folder with the data.
+
+Firestore = Datastore++, optimized for multi device access.
+offline mode and data synchronization across multiple devices, mobile, IoT, etc 
+provides client side libraries: Web, iOS, Android and more.
+offers Datastore(RECOMMENDED) and Native modes 
+
+---------------------------------------------
+
+Cloud BigTable
+ 
+Petabyte scale, wide column NoSQL DB (HBase API compatible = on-premises)
+HBase = open source options 
+Designed for huge volumes of analytical and operational data 
+IOT Streams, Analytics, Time Series Data etc 
+Handle millions of read/write TPS(transactions per second) at very low latency 
+single row transactions (multi row transactions not supported) 
+NOT serverless: you need to create a server instance, use SSD or HDD.
+can scale horizonally with multiple nodes 
+Cannot export data using cloud console or gcloud,
+eithr use a Java application (java -jar export/import) or use HBase commands.
+Use cbt command line tool to work with BigTable (Not gcloud) cbt create table my-table. 
+
+
+
+Wide Column Database:
+
+at most basic level, each table is a sorted key/value map
+each value in a row is indexed a key-row key 
+related columns are grouped into column families 
+each column is identified by using column-fmily:column-qualifier(or name) 
+
+this structure supports high read and write throughput at low latency 
+advantages: scalable to petabytes of data with millisecond responses upto millions of TPS. 
+
+use casees: IoT streams, graph data and real time analytics (time-series data, financial data-transaction histories, stock prices etc) 
+
+
+---------------------------------------------
+
+Memorystore
+
+In-memory datastore service: reduce access times 
+fully managed (provisioning, replication, failover and patching)
+highly available with 99.9% availability SLA 
+monitoring can be easily setup using Cloud Monitoring 
+Support for Redis and Memcached: 
+	Use Memcached for Caching ;
+	Use Redis for low latency access with persistence and high availability 
+
+
+---------------------------------------------
+
+BigQuery - Datawarehouse 
+
+Exabyte scale modern Datawarehouse using solution from GCP 
+
+Relational database (SQL, schema, consistency etc)
+use SQL-like commands to query massive datasers 
+
+Traditional(Storage + Compute) + Modern (Realtime + Serverless)
+
+When we are talking about a Datawarehouse
+importing and exporting data (and formats) becomes very important:
+Load data from a variety of sources, including streaming data 
+Variety ofimports formats: DSV/JSON/Avro/Parquet/ORC/Datastore backup 
+
+Export to Cloud Storage (long term storage) and Data Studio (for visualization)
+Formats-CSV/JSON (with Gzip compression), Avro (with deflate or snappy compression)
+
+Automatically expire data (Configurable Table Expiration)
+
+Query external data sources without storing data in BigQuery 
+Cloud Storage, Cloud SQL, BigTable, Google Drive 
+Use Permanent or Temporary external tables 
+
+Accessing and Querying Data:
+
+Cloud Console 
+bq command-line tool (Not gcloud)
+BigQuery Rest API or 
+Hbase API based libraries (Java, .NET, Python)
+
+Remember: BigQuery querues can be expensive as you are running them on large data sets.
+
+Best practice: Estimate BigQuery queries before running:
+1- Use UI(console)/bq (--dry-run) get scanned data volume (estimate)
+2- Use Pricing Calculator: find price for scanning 1 MB data. Calculate cost.
+
+
+---------------------------------------------
+
+Cloud SQL - Command Line 
+
+gcloud sql instances create/clone/delete/describe/patch(update software) 
+
+gcloud sql instances create INSTANCE 
+
+glcoud sql databases create/delete/describe/list/patch 
+
+gcloud sql databases create DATABASE --instance=INSTANCE 
+
+gcloud sql connect INSTANCE 
+	--database=DATABASE 
+	--user=root 
+	
+gcloud sql backups create/describe/list 
+
+gcloud sql backups create 
+	--async 
+	--instance INSTANCE 
+
+
+BigQuery - Command Line 
+
+bq show bigquery-public-data:samples.shakespeare 
+
+bq query QUERY-STRING 
+	--dry-run (to estimate the bytes scanned by a query)
+
+bq extract (export data)
+bq load (load data) 
+
+Remember: use the standard way to set the project:
+gcloud config set project my-project 
+
+
+
+Cloud BigTable - Command Line 
+
+cbt - CLI for Cloud Bigtable (Not gcloud)
+
+installing:
+gcloud components install cbt/bq 
+
+cbt listinstances (verify installation)
+
+Specify the project for cbt:
+	Create .cbtrc file with the configuration 
+	echo project = PROJECT-ID > ~/.cbtrc 
+	echo instance = quickstart-instance >>~/.cbtrc 
+	cat ~/.cbtrc
+	cbt listinstances 
+	
+cbt createinstance (create and instance)
+
+cbt createcluster (create a cluster within configured instance) 
+
+cbt createtable/deleteinstance/deletecluster/deletetable 
+
+cbt listinstances/listclusters 
+
+cbt ls (list tables and column families) 
+
+REMEMBER you can configure your project 
+with cbt in .cbtrc file 
+
+
+
+
+
+
 
 
 
