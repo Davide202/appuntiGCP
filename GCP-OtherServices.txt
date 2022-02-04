@@ -1124,6 +1124,1227 @@ cbt ls (list tables and column families)
 REMEMBER you can configure your project 
 with cbt in .cbtrc file 
 
+--------------------------------------------
+
+
+Relational Database - Import and Export 
+
+
+Cloud SQL:
+to/from Cloud Storage 
+	gcloud sql/csv export/import 
+from console/gcloud/REST API 
+SQL and CSV formats 
+for large databases use serverless mode 
+	reduces perdormance impact of export on the live database 
+	
+Cloud Spanner:
+to/from Cloud Storage 
+from Console (uses Cloud Data Flow)
+
+BigQuery:
+to/from Cloud Storage and others
+	(bq extract/load)
+from Console/bq 
+formats: CSV/JSON(with Gzip compression), Avro( with deflate or snappy compression)
+Variety of options to import data:
+Load data from Cloud Storage 
+
+
+
+NoSQL Database - Import and Export 
+
+
+Cloud Datastore/Firestore: 
+to/from Cloud Storage
+from Console/gcloud/REST API
+gcloud datastore/firestore export/import 
+	--kinds 
+	--namespaces 
+
+
+Cloud BigTable:
+to/from Cloud Storage 
+create Dataflow jobs 
+Formats: Avro/Parquet/SequenceFiles 
+
+
+Remember:
+Ensure that service accounts have access to Cloud Storage Buckets.
+ACL(Access Control List)
+	gsutil acl ch -U SERVICE_ACCOUNT:W BUCKET
+ROLES (assign roles to Service Account):
+	Storage Admin or 
+	Storage Object Admin or 
+	Storage Object Creator 
+	
+	
+------------------------------------------
+
+	DATABASES - REMEMBER 
+
+BigQuery, Datastore, Firebase does NOT need VM configuration 
+whereas Cloud SQL and BigTable need VM configuration 
+
+Relational Databases:
+	small Local databases: Cloud SQL 
+	highy scalable global databases: Cloud Spanner 
+	Datawarehouse: BigQuery 
+
+NoSQL Databases 
+	Transactional database for a few Terabytes of data: Cloud Datastore 
+	Huge volumes of IOT or streaming analytics data: Cloud BigTable.
+	
+
+
+------------------------------------------
+OLTP, or online transactional processing, enables the real-time execution of large numbers of database transactions by large numbers of people, typically over the internet.(Cloud SQL) 
+
+OLAP (for online analytical processing) is software for performing multidimensional analysis at high speeds on large volumes of data from a data warehouse, data mart, or some other unified, centralized data store.(Cloud BigQuery) 
+
+Which Database service is a managed, NoSQL wide column database suitable for huge databases (> 10 TB)?
+(Cloud BigTable)
+
+Which DB service is recommended for huge volumes (Petabytes) of streaming data from IOT devices?(Cloud BigTable)
+
+Which of these is the command line tool for Cloud BigTable?(cbt) 
+
+Which of these is the command line tool for Cloud BigQuery?(bq) 
+
+Which of these is the command line tool for Cloud SQL?(gcloud) 
+
+------------------------------------------
+
+
+DECOUPLING APPLICATIONS WITH PUB/SUB 
+
+Need for Synchronous Communication
+
+Applications on your web server make synchronous calls to the logging service 
+
+What if your logging service goes down?
+will your applications go down too?
+YES 
+
+What if all of sudden, there is high load and there are log of logging coming in?
+Log Service is not able to handle the load and goes down very often.
+
+
+Asynchronous Communication - Decoupled 
+
+Create a topic and have your applications put log messages on the topic.
+
+Logging service picks them up for processing when ready 
+
+Advantages:
+	Decoupling: Publisher (Apps) don't care about who is listening 
+	Availability: Publisher (Apps) up even if a subscriber (Logging Service) is down 
+	Scalability: Scale consumer instances (Logging Service) under high load 
+	Durability: Message is not lost even if subscriber (Logging Service) is down.
+	
+Pub/Sub:
+- Reliable, scalable, fully-managed asynchronous messaging service 
+- Backbone for Higly Available and Highly Scalable Solutions:
+	Auto scale to process billions of messages per day 
+	Low cost(pay for use) 
+- Usecases: Event ingestion and delivery for streaming analytics pipelines.
+
+- Support push and pull message deliveries.
+
+How does it work?
+
+- Publisher: Sender of a message 
+	publishers send messages by making HTTPS requests to pubsub.googleapis.com 
+
+- Subscriber: Receiver of the message 
+	
+	. Pull: Subscriber pulls messages when ready 
+	Subscriber makes HTTPS requests to pubsub.googleapis.com 
+	
+	.Push: Messages are sent to subscrivers 
+	Subscribers provide a web hook endpoint at the time of registration.
+	
+	When a message is received on the topic, a HTTPS POST request is sento to the web hook enpoints.
+	
+Very Flexible Publisher(s) and Subscribers(s) Relationships:
+	One to Many, 
+	Many to One, 
+	Many to Many.
+
+STEP 1: Topic is created 
+STEP 2: Subscription(s) are created 
+	Subscriber register to the topic 
+	Each Subscription represents discrete pull of messages from topic:
+	
+	Multiple clients pull same subscription,
+	messages split between clients.
+	
+	Multiple clients create a subscriprion each, each client will get every message.
+	
+Pub/Sub - Sending and Receiving a Message 
+
+- Publisher sends a message to Topic 
+
+- Message individually delivered to each and every subscription 
+	- Subscriber can receive message either by: 
+	
+	Push: Pub/Sub sends the message to subscriber 
+	
+	Pull: Subscribers poll for messages 
+	
+- Subscribers send ackknowledgement(s) back 
+
+- Message(s) are removed from subscriptions message queue 
+	Pub/Sub ensures the message is retained per subscription until it is ackknowledged 
+	
+	
+	-----------------------------------------------
+	
+	
+PUB/SUB - COMMAND LINE 
+
+gcloud config set project glowing-furnace-304608
+
+gcloud pubsub topics create topic-from-gcloud
+
+gcloud pubsub subscriptions create subscription-gcloud-1 
+	--topic=topic-from-gcloud
+	--enable-message-ordering (ordered message delivery)
+	--ack-deadline	(how long to wait for acknowledgement)
+	--message-filter (criteria to filter messages)
+	
+	
+gcloud pubsub subscriptions create subscription-gcloud-2 
+	--topic=topic-from-gcloud
+
+gcloud pubsub subscriptions pull subscription-gcloud-2
+	--auto-ack
+	--limit 
+	
+gcloud pubsub subscriptions ack my-subscription 
+	--ack-ids=[ack_id,...]
+
+
+gcloud pubsub subscriptions pull subscription-gcloud-1
+
+gcloud pubsub topics publish topic-from-gcloud 
+	--message="My First Message"
+
+gcloud pubsub topics publish topic-from-gcloud 
+	--message="My Second Message"
+
+gcloud pubsub topics publish topic-from-gcloud 
+	--message="My Third Message"
+
+gcloud pubsub subscriptions pull subscription-gcloud-1 	
+	--auto-ack
+
+gcloud pubsub subscriptions pull subscription-gcloud-2 
+	--auto-ack
+
+gcloud pubsub topics list
+
+gcloud pubsub topics delete topic-from-gcloud
+
+gcloud pubsub topics list-subscriptions my-first-topic
+	
+	
+------------------------------------------------------
+
+	NETWORKING
+
+ GOOGLE CLOUD VPC (Virtual Private Cloud)
+
+Corporate network provides a secure internal network 
+protecting your resources, data and communication from
+external users. 
+
+Network traffic within VPC is isolated (not visible) from all other Cloud VPCs.
+
+You control all the traffic coming in and going outside a VPC.
+
+Best practice is to create all your GCP resources 
+(compute, databases etc) within a VPC.
+
+VPC is a global resource and contains subnets in one or more region.
+
+Remember: NOT tied to a region or a zone. 
+VPC resources can be in any region or zone.
+
+Need for VPC Subnets:
+Different types of resources are created on cloud: databases, compute etc...
+Each type of resource has its own access needs 
+
+Load Balancers are accessible from internet (public resources)
+
+Databases or VM instances should not be accessible from internet.
+
+ONLY application within your network (VPC) should be able to access them (private resources)
+
+Example:
+
+User -> Cloud Load Balancing -> Compute Engine -> Database.
+
+How do you separate public resources from private resources inside a VPC?
+Create separate Subnets!
+
+Additional Reason: 
+You want to distribute resources across multiple regions for high availability. 
+
+SUBNETS 
+
+Create different subnets for public and private resources:
+
+- Resourcess in a public subnet CAN be accessed from internet.
+
+- Resources in a private subnet CANNOT be accessed from internet 
+
+- BUT resources in public subnet can talk to resources in private subnet. 
+
+EACH Subnet is created in a region 
+
+CREATING VPCs and SUBNETS 
+
+By default, every project has a default VPC 
+
+You can create your own VPCs:
+
+OPTION1
+Auto mode VPC network:
+Subnets are automatically created in each region 
+Default VPC created automatically in the project uses auto mode.
+
+OPTION2
+Custom mode VPC network:
+No subnets are automatially created 
+you have complete control over subnets and their IP ranges 
+Recommended for Production 
+
+OPTIONS:
+Enable PRIVATE GOOGLE ACCESS 
+allows VMs to connect to Google APIs using private IPs
+
+Enable FlowLogs
+to troubleshoot any VPC related network issues 
+
+_____________________________________________________
+
+CIDR (Classless Inter-Domain Routing) Blocks 
+
+Resources in a network use countinuous IP addresses to make routing easy:
+
+Example: Resources inside a specific network can use IP addresses from 69.208.0.0 to 69.208.0.15 
+
+How do you express a range of addresses that resources in a network can have?
+
+CIDR block:
+A CIDR block consists of a starting IP address (69.208.0.0) and a range(/28).
+
+Example:
+CIDR block 69.208.0.0/28 represents addresses
+from 60.208.0.0 to 69.208.0.15 
+a total of 16 addresses 
+
+Quick Tip: 69.208.0.0/28 indicates that the first 28 bits 
+(out of 32) are fixed.
+The last 4 bits can change: 2 to the power 4: 16 addresses.
+			cidr.xyz
+			
+
+___________________________________________
+
+FIREWALL RULES (VPC)
+
+Configure Firewall rules to control traffic going in or out of the network:
+- Stateful
+- each firewall rule has priority (0-65535) assigned to it
+- 0 has highest priority, 65535 has least priority
+- Default impied rule with lowest priority:
+	allow all egress
+	deny all ingress
+	default rules can't be deleted 
+	you can override default rules by defining new rules with priority 0-65535 
+
+Defautl VPC has 4 additional rules with priority 65534:
+	1 - allow incoming traffic from VM instances in same network (default-allow-internal)
+	2 - allow incoming TCP traffic on port 22 (SSH) (default-allw-ssh 
+	3 - allow incoming TCP traffic on port 33389(RDP) (default-allow-rdp)
+	4 - allow incoming ICMP from any source on the network (default-allow-icmp)(ping) 
+	
+Firewall Rules - Ingress and Egress Rules 
+
+- Ingress Rules:
+incoming traffic from outside to GCP targets 
+	. Target (defines the destination): all instaces or instances with TAG/SA 
+	. Source (defines where the traffic is coming from): CIDR (ranges of IP addresses) or All instances / instances with TAG/SA 
+	
+- Egress Rules: 
+outgoing traffic to destination from GCP targets
+	. Target (defines the source): All instances or instances with TAG/SA 
+	. Destination: CIDR Block 
+	
+- Along with each rule, you can also define:
+	. Priority - lower the number, higher the priority 
+	. Action on match - allow or deny traffic 
+	. Protocol - ex.TCP or UDP or ICMP 
+	. Port - which port?
+	. Enforcement status - enable or disable the rule
+	
+-----------------------------------------
+	
+	SHARED VPC 
+	
+Scenario: your organization has multiple projects to talk to each other?
+
+How to allow resources in different projects to talk with internal IPs securely and efficiently?
+
+The answer is Shared VPC 
+Created at organization or shared folder level (Access Needed: Shared VPC Admin)
+
+Allow VPC network to be shared betwwn projects in same organization 
+
+Shared VPC contains one host project and multiple service projects:
+	Host Project: contains shared VPC network
+	Service Projects: attached to host project.
+	
+Helps you achieve separation of concerns:
+Network administrators responsible for Host Project and resource users use Service Projects.
+
+
+	VPC Peering
+	
+Scenario: how to connect VPC networks across different organizations?
+
+Networks in same project, different projects and across projects in different organizations can be peered. 
+
+All communication happens using internal IP addresses 
+Highly efficient because all communication happens inside Google network 
+Highly secure because not accessible from internet 
+No data transfer cherges for data transfer between services
+
+Remember:
+network administration is NOT changed:
+Admin of one VPC do not get the role automatically in a peered network.
+
+____________________________________ 
+
+	HYBRID CLOUD 
+	
+	- Cloud VPN 
+	- Cloud Interconnect 
+	- Cloud Peering 
+
+CLOUD VPN 
+
+Cloud VPN connect on-premises network to the GCP network,
+implemented using IPSec VPN Tunnel
+traffic through internet (public)
+traffic encrypted using Internet Key exchange protocol 
+
+Two types of Cloud VPN solutions:
+
+	HA VPN (SLA 99.99% service availability with two external IP addresses)
+	only dynamic routing (BGP) supported
+	
+	CLASSIC VPN (SLA 99.9% service availability, a single external IP address)
+	supports Static routing (policy-based, route-based) and dynamic routing using BGP.
+	
+CLOUD INTERCONNECT 
+
+High speed physical connection between on-premise and VPC networks:
+
+Highly available and high throughout 
+Two types of connections possible:
+	
+	Dedicated Interconnect
+	10 Gbps or 100 Gbps configurations
+	
+	Partner Interconnect 
+	50 Mbps to 10 Gbps configurations 
+	
+Data exchange happens through a private network:
+Communicate using VPC network's internal IP addresses from on-premises network 
+Reduces egress costs 
+	As public internet is not used 
+	
+Feature: Supported Google API's and services can be privately accessed from on-premise.
+	for low bandwidth, Cloud VPN is recommended.
+	
+DIRECT PEERING 
+
+Connect customer network to Google network using network peering
+Direct path from on-premises network to Google services 
+
+NOT a GCP Service 
+	lower level network  connection outside of gcp 
+NOT RECOMMENDED:
+	use Cloud Interconnect and Cloud VPN.
+	
+__________________________________________ 
+
+CLOUD MONITORING 
+
+application healthy
+issues 
+database space 
+servers capacity 
+
+Cloud Monitoring are tools to monitor your infrastructure
+
+Measures key aspects of services (Metrics)
+
+Create visualizations (Graphs and Dashboard)
+
+Configure Alerts (when metrics are NOT healthy)
+	Condition 
+	Notification - Multiple channels
+	Documentation attached 
+	
+Workspace 
+You can use Cloud Monitoring to monitor one or more GCP projects and one or more AWS Accounts 
+In a Workspace you can GROUP all the information from multiple projects or AWS Accounts 
+Workspaces are needed to organize monitoring information 
+A workspace allows you to see monitoring information from multiple projects 
+
+1- Create workspace in a specific project (Host Project)
+2- Add other GCP projects (or AWS Accounts) to the workspace.
+
+Monitoring for Virtual Machines
+
+Defaut metrics monitored include:
+	CPU utilization
+	Some disk traffic metrics
+	Network traffic 
+	Uptime information 
+	
+Install Cloud Monitoring Agent on the VM to get more disk, CPU, network and process metrics:
+	- collect-based daemon 
+	- gathers metric from VM and sends them to Cloud Monitoring 
+
+Monitoring - Alerting 
+
+Monitoring - Uptime checks 
+
+Alerts are when some metrics don't match your criteria.
+
+Uptime Checks is when a specific application is down.
+
+_________________________________________ 
+
+CLOUD LOGGING 
+
+Real time log management and analysis tool 
+
+Allow to store, search, analyze and alert on massive volume of data 
+
+Exabyte scale, fully managed service 
+	No server provisioning, patching etc 
+	
+Ingest Log data from any source 
+
+Key Features:
+	
+	Logs Explorer - search, sort and analyze using flexible queries 
+	
+	Logs Dashboard - rich visualization 
+	
+	Logs Metrics - capture metrics from logs (using queries/matching strings)
+	
+	Logs Router - route different log entries to different destinations 
+	
+	
+Cloud Logging - Collection
+
+	GKE 
+	App Engine 
+	Cloud Run 
+	
+Ingest logs from GCE VMs:
+	Install Logging Agent (based on fluentd)
+	RECOMMENDED: Run Logging Agent on all VM instances 
+	
+Ingest logs from on-premises:
+	
+	- RECOMMENDED: Use the BindPlane tool from Blue Medora 
+	
+	- Use the Cloud Logging API
+	
+	
+	
+	
+	
+Cloud Logging  - Audit and Securing Logs 
+
+Access Transparency Log:
+Captures Actions performed by GCP team on your content (NOT supported by all services):
+ONLY for organizations with Gold support level and above 
+
+Cloud Audit Logs: 
+Answers who did what, when and where:
+There are four types:
+	
+1- Admin activity Logs 
+	API calls or other actions that modify the configuration of resources 
+	Enabled By Default 
+	VM Examples:
+	VM creation, patching resources, change in IAM permissions 
+	Cloud Storage: 
+	modify bucket or object 
+	Access Needed: 
+	Logging/Logs Viewer or Project/Viewer 
+	
+2- Data Access Logs 
+	Reading configuration of resources 
+	VM Examples:
+	Listing resources (VMs, Images etc) 
+	Cloud Storage: 
+	modify/read bucket or object 
+	Access Needed: 
+	Logging/Private Logs Viewer or Project/Owner 
+	
+3- System Event Audit Logs
+	Google Cloud administrative actions 
+	Enabled By Default
+	VM Examples:
+	On host maintenance, Instance preemption, Automatic restart.
+	Access Needed:
+	Logging/Logs Viewer or Project/Viewer 
+	
+4- Policy Denied Audito Logs 
+	When user or service account is deenied access 
+	Enabled By Default 
+	VM Examples:
+	Security policy violating logs 
+	Access Needed: 
+	Logging/Logs Viewer or Project/Viewer 
+	
+
+
+
+Each of this logs contains:
+
+Which service? - protoPayload.serviceName 
+
+Which operation? - protoPayload.methodName 
+
+What resource is audited? - resource.Type 
+
+Who is making the call? - authenticationInfo.principalEmail 
+
+
+How do you manage your logs?
+	Logs from various sources reaches Log Router 
+	Log Router checks against configured rules 
+		What to ingest 
+		What to discard 
+		Where to route 
+Two types of Logs Buckets: 
+
+- _Required:
+Holds Admin Activity, System Events and Access Transparency Logs (retained for 400 days) 
+	. zero charge 
+	. you cannot delete the bucket 
+	. you cannot change retention period 
+
+- _Default: 
+All other logs (retained for 30 days) 
+	. you are billed based on Cloud Logging pricing 
+	. you cannot delete the bucket BUT 
+	you can disable the _Default (route) log sink to disable ingestion. 
+	. you can edit retention settings (1 to 3650 days (10 years)) 
+	
+There are multiple places where you can export your logs out to:
+
+Logs are ideally stored in Cloud Logging for limited period 
+For long term retention (Compliance, Audit) logs can be moved to:
+	
+	Cloud Storage bucket 
+	(ex: bucket/syslog/2025/05/05) 
+	
+	BigQuery dataset (ex: tables syslog_20250505, columns: timestamp, log) 
+	
+	Cloud Pub/Sub topic (base64 encoded log entries) 
+	
+How do you export logs?
+Create sinks to these destinations using Log Router:
+you can create, include or exclude  filters to limit the logs 
+	
+USE CASES:
+
+1- Troubleshoot using VM logs:
+	Install Cloud Logging Agent in all VMs 
+	and send logs to Cloud Logging 
+	Search for logs in Cloud Logging 
+
+2- Export VM logs to BigQuery for querying using SQL-like queries:
+	Install Cloud Logging Agent in all VMs and send logs to Cloud Loggin 
+	Create a BigQuery dataset for storing the logs 
+	Create an export sink in Cloud Logging with bigQuery with BigQuery dataset as sink destination.
+	
+3- You want to retain audit logs for external auditors at minimum cost:
+		Create an export sink in Cloud Logging with Cloud Storage bucket as sink destination 
+		Provide auditors with Storage Object Viewer role on the bucket 
+		You can use Google Data Studio also (for visualization).
+	
+DEMO:
+
+Cloud Logging 
+Creiamo un bucket 
+
+Creiamo una function "Process by Cloud Function" 
+nel caso: "Create/Finalize" 
+facciamo l'upload di alcuni file e vediamo i log.
+
+In Logs Router possiamo definire i Sinks
+attraverso il match di rules.
+lo stesso log può essere inviato a più sinks 
+possiamo anche decidere dove salvare i log.
+
+Cloud Monitoring 
+
+Possiamo raccogliere dati da più progetti e da AWS Accounts.
+
+Per definire gli Alerting bisogna definire un Notification Channel (SMS, MAIL,...)
+e delle Policy: quale risorsa monitorare, quando fa cosa e quanto spesso/evento.
+Possiamo anche definire gli Uptime Checks
+per monitorare degli end-point, o risorse.
+
+Alerts are when some metrics don't match your criteria.
+
+Uptime Checks is when a specific application is down.
+
+_____________________________________________________ 
+	CLOUD TRACE 
+
+Distributed tracing system for GCP:
+Collect latency data from:
+	- Supported Google Cloud Services 
+	- Instrumented applications (using tracing libraries) using Cloud Trace API.
+	
+Find out:
+	How long does a service take to handle requests?
+	What is the average latency of requests? 
+	How are we doing over time?
+					(increasing/decreasing trend)
+Supported for:
+Compute Engine, GKE, App Engine (Flexible/Standard) etc 
+
+Trace client libraries available for:
+	C#, Go, Java, Node.js, PHP, Python, Ruby 
+
+_____________________________________________________
+
+	CLOUD DEBUGGER 
+
+How to debug issues that are happening only in test or production environments? 
+Cloud Debugger captures state of running application,
+Inspect the state of the application directly in the GCP environment,
+Take snapshots of variables and call stack.
+No need to add logging statements 
+No need to redeploy 
+Very lightweight, very little impact to users 
+Can be used in any environment: test, acceptance, production 
+
+_____________________________________________________
+
+	CLOUD PROFILER 
+	
+How do you identify performance bottlenecks in production?
+Cloud Profiler is a statistical, low-overhead profiler.
+Continuously fathers CPU and Memory usage from production systems 
+Connect profiling data with application source code 
+Easily identify performance bottlenecks 
+
+Two major components:
+	
+	- Profiling agent (collects profiling information)
+	
+	- Profiler interface (visualization)
+	
+_____________________________________________________
+
+	ERROR REPORTING 
+	
+How do you identity production problems in real time?
+Real-time exception monitoring:
+Aggregates and displays errors reported from Cloud Services (using stack traces of the applications) 
+
+Centralized Error Management console:
+Identify and manage top errors or recent errors 
+
+Use Firebase Crash Reporting for errors from Android and iOS client applications 
+
+Supported for Go, Java, .NET, Node.js, PHP, Python, Ruby.
+
+Errors can be reported by sending them to Cloud Logging OR 
+by directly calling the Error Reporting API.
+
+Error Reporting can be accessed from desktop.
+Also available in the Cloud Console mobile app for iOS and Android.
+
+_____________________________________________________ 
+ 
+	Cloud Operations Scenatios
+	
+	
+You would like to record all operations/requests on all objects in a bucket (for auditing):
+Turn on data access audut logging for the buscket.
+
+You want to trace a request across multiple microservices:
+Cloud Trace.
+
+You want to identify prominent exceptions (or errors) for a specific microservice:
+Error Reporting.
+
+You want to debug a problem in production by executing step by step:
+Cloud Debugger.
+
+you want to look at the logs for a specific request:
+Cloud Logging.
+
+
+_____________________________________________________
+
+	Organizing GCP Resources
+	
+Resource Hierarchy in GCP:
+
+Organization > Folder > Project > Resources 
+
+Resources are created in projects,
+Projects help you to group different resources.
+
+A Folder can contains multiple projects. 
+
+Organization can contains multiple Folders.
+
+Recommendations:
+
+Create separate projects for different environments:
+This will ensure complete isolation between test and production environments.
+
+Create separate folders for each department:
+Isolate production applications of one department from another.
+- We can create a shared folder for shared resources.
+
+One project per application per environments:
+	Let's consider two apps: A1 and A2.
+	Let's assume we need two environments: DEV and PROD.
+	In the ideal world you will create four projects:
+	A1-DEV, A1-PROD, A2-DEV, A2-PROD.
+	Isolates environments from each other,
+	DEV changes will NOT break PROD,
+	Grant all developers complete access (create, delete, deploy) to DEV Projects.
+	Provide production access to operations teams only!
+
+_____________________________________________________ 
+
+	Billing Accounts 
+	
+Billing Account is mandatory for creating resources in a project:
+Billing Account contains the payment details 
+Every Project with active resources should be associated with a Billing Account 
+
+Billing Account can be associated with one or more projects
+
+You can have multiple billing accounts in an Organization 
+
+RECOMMENDATION:
+
+Create Billing Accounts representig your organization structure:
+A startup can have just one Billing Account 
+A large enterprise can have a separate billing account for each department 
+
+Two Types:
+	
+	Self Serve:
+	Billed directly to Credit Card or Bank Account 
+	
+	Invoiced:
+	generate invoices (used by large enterprises) 
+	
+	
+Manage Billing - Budget, Alerts, Exports 
+
+Setup a Cloud Billing Budget to avoid surprises:
+
+Recommended: Configure Alerts!!!
+
+Default alert thresholds at 50%, 90% and 100% 
+Send alerts to Pub/Sub (Optional)
+Billing admins and Billing Account users are alerted by e-mail.
+
+Billing data can be exported (on a schedule) to:
+	
+	BigQuery (if you want to query information or visualize it)
+
+	Cloud Storage (for history/archiving)
+	
+___________________________________________________
+
+		IAM BEST PRACTICES 
+		
+- Principle of Least Privilege
+Give least possible privilege needed for a role!
+	
+	Basic roles are not recommended,
+	prefer predefined roles when possible
+
+	Use Service Accounts with minimum privileges 
+	Use different Service Accounts for different apps/purposes 
+	
+- Separation of Duties 
+Involve atleast 2 people in sensitive tasks:
+	Example: have separate deployes and traffic migrator roles 
+	App Engine provides App Engine Deployes and App Engine Service Admin roles.
+	
+	App Engine Deployer can deploy new version but cannot shift traffic to the new version.
+	
+	App Engine Service Admin can shift traffic but cannot deploy new version.
+	
+- Constant Monitoring
+Review Cloud Audit Logs to audit changes to IAM policies and acess to Service Account keys.
+	
+	Archive Cloud Audit Logs in Cloud Storage buckets for long term retention 
+
+- Use Groups when possible 
+Makes it easy to manage users and permissions.
+
+____________________________________________________ 
+
+	USER IDENTITY MANAGEMENT (IAM) in Google Cloud 
+	
+Email used to create free trial account: Super Admin 
+
+Access to everything in your GCP organization, folders and projects 
+
+Manage access to oter users using their Gmail Accounts
+
+gcloud projects add-iam-policy-binding PROJECT_ID 
+	--member=user:user@gmail.com 
+	--role=roles/sotrage.obectAdmin 
+	
+However, this is NOT recommended for enterprises 
+
+Options 1:
+Your Enterprise is using Google Workspace 
+Use Google Workspace to manage users (groups etc) 
+Link Google Cloud Organization with Google Workspace.
+
+
+Option 2:
+Your Enterprise uses an Identity Provider of its own 
+Federate Google Cloud with your Identity Provider.
+
+Corporate Directory Federation 
+
+. Federate: 
+	Cloud Identity or Google Workspace 
+	with your external identity provider (IdP)
+	souch as Active directory or Azure Active Directory.
+
+. Enable Single Sign On:
+	1: Users are redirected to an external IdP to authenticate 
+	2: When users are authenticated, SAML assertion is sento to Google Sign-In 
+
+Examples:
+
+- Federate Active Directory with Cloud Identity by using Google Cloud Directory Sync (GCDS) and Active Directory Federation Services (AD FS) 
+
+- Federating Azure AD with Cloud Identity 
+
+_____________________________________________________ 
+
+
+	IAM Members/Identities
+
+- Google Account - Represents a person (an email address)
+
+- Service Account - Represents an application account (Not person) 
+
+- Google group - Collection of Google and Service Accounts 
+	Has an unique email address 
+	Helps to apply access policy to a group 
+	
+- Google Workspace domain - Google Workspace (formerly G Suite)  provides collaboration Services for enterprises: 
+	
+	Tools like Gmail, Calendar, Meet, Chat, Drive, Docs etc are included 
+	
+	If your enterprise is using Google Workspace, you can manage permissions using your Google Workspace domain.
+	
+- Cloud Identity domain - Cloud Identity is an Identity as a Service (IDaaS) solution that centrally manages users and groups.
+
+
+USE CASES:
+
+All members in your team have G Suite accounts.
+You are creating a new production project and would want to provide access to your operations team:
+Create a Group with all your operations team.
+Provide access to production project to the Group.
+
+All members in your team have G Suite accounts.
+You are setting up a new project.
+you want to provide a one time quick access to a team member:
+Assign the necessary role directly to G Suite email address od your team member.
+If it is not a one time quick access, the recommended approach would be to crreate a Group.
+
+You want to provide an external auditor access to view all resources in your project BUT 
+he should NOT be able to make any changes:
+give them roles/viewer role 
+(Generally basic role are NOT recommended BUT it is the simplest way to provide view only access to all resources).
+
+Your application deployed on a GCE VM (Project A) needs to access Cloud Storage bucket from a different project (Project B):
+In Project Bm assing the right role to GCE VM service account from Project A.
+
+____________________________________________________ 
+
+	ORGANIZATION POLICY SERVICE (in IAM)
+ 
+How to enable centralized constraints on all resources created in an Organization?
+Configure Organization Policy 
+
+Examples:
+Disable creation of Service Accounts. 
+Allow/Deny creation of resources in specifi regions.
+
+Needs a Role: Organization Policy Administrator 
+
+Remember: IAM focuses on Who 
+	Who can take specific actions on resources?
+
+Remember: Organization Policy focuses on What 
+	What can be done on specific resources?
+	
+Organization Policy always Overrides IAM.
+
+---------------------------------------------
+
+Resource Hierarchy and IAM Policy 
+
+IAM Policy can be set at any level of hierarchy
+
+Resources inherit the policies of All parents.
+
+The effective policy for a resource is the union of the policy on that resource and its parents 
+
+Policy inheritance is transitive:
+	Organization policies are applied at resource level.
+	
+You can't restrict policy at lower level if permission is given at an higher level.
+
+____________________________________________________ 
+
+Organization, Billing and Project Roles 
+
+Organization Administrator
+ define Resource Hierarchy, define Access Management Policies, manage other users and roles.
+
+Billing Account Creator
+ create Billing Accounts 
+
+Billing Account Administrator 
+manage Billing Accounts (payment instruments, billing exports, link and unlink projects, 
+manage roles on billing account).
+Cannot create a Billing Account.
+
+Billing Account User
+associate Projects with Billing Accounts.
+Tipically used in combination with Project Creator 
+These two roles allow user to create new project and link with billing account.
+
+Billing Account Viewer
+see all Billing Account details.
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------
+	SSH into Linux VMs 
+----------------------------------------------------------------
+
+- Compute Engine Linux VMs uses Key-based SSH authentication :
+
+TWO OPTIONS:
+
+	Metadata managed:
+	Manually create and configure individual SSH keys 
+	
+	OS Login:
+	Manage SSH access without managing individual SSH keys.
+	Recommended for managing multiple users across instances or projects 
+	Your Linux user account is linked to your Google identity
+	
+	To enable: set enable-oslogin to true in metadata 
+	
+	gcloud compute project-info/instances add-metadata 
+		--metadata enable-oslogin=TRUE 
+		
+	Advantage: ability to import existing Linux accounts from on premises AD and LDAP.
+	
+	Users need to have roles: roles/compute.osLogin or roles/compute.osAdminLogin
+	
+	
+	
+- Windows instances use password authentication (username and pwd)
+
+Generate using console or 
+
+gcloud compute reset-windows-password
+	
+
+Login in SSH 
+
+1- from console - SSH Button 
+Ephemeral SSH key pair is created by Compute Engine 
+
+2- gcloud compute ssh 
+a username and persistent SSH key pair are created by Compute Engine 
+SSH key pair reused for future interactions 
+
+3- Use customized SSH keys 
+Metadata managed: Upload the public key to project metadata 
+
+OR 
+
+OS Login: Upload your public SSH key to your OS Login profile 
+	gcloud compute os-login ssh-keys add 
+	
+OR 
+	
+Use OS Login API: POST https://oslogin.googleapis.com/v1/users/ACCOUNT_EMAIL:importSshPublicKey 
+
+
+----------------------------------------------------------------
+
+IAM SCENARIOS
+
+You want to give permanent access to a sub set of object in a Cloud Storage bucket: Use ACLs (Access control lists)
+
+https://cloud.google.com/storage/docs/access-control/create-manage-lists
+
+You want to give permanent access to the entire bucket in a Cloud Storage bucket: Use IAM (Identity Access Management)
+
+You want to provide time limited access to a specific object in a Cloud Storage bucket: Create a Signed URL 
+
+You want to give access to a set of resources to you development team:
+Create a Group with your development team as member. 
+Bind the right Predefined Roles to Your Group.
+
+Upload objects to Cloud Storage:
+Storage Object Creator
+
+Manage Kubernetes API objects:
+Kubernetes Engine Developer 
+
+Manage Service Accounts:
+Service Account Admin 
+
+View Data in BigQuery: BigQuery Data Viewer.
+
+
+------------------------------------------------------------
+
+Cloud DNS
+
+
+1- Buy the domain name mywebsite.com (Domain Registrar)
+2- Setup  your website content (Website Hosting)
+3- Route requests to mywebsite.com to the website host server (DNS)
+
+Cloud DNS = Global Domain Name System 
+Setup your DNS for your website 
+	
+	Route api.mywebsite.com to the IP address of API server 
+	
+	Route static.mywebsite.com to the IP address of HTTP server 
+	
+	Route email (user@mywebsite.com) to the email server (mail.mywebsite.com) 
+	
+Public and private managed DNS zones (container for records)
+
+
+gcloud dns managed-zones create ZONE_NAME
+	--description (REQUIRED short description for the managed-zone)
+	--dns-name (REQUIRED DNS name suffix that will be managed with the created zone) 
+	--visibility (private/public)
+	--networks (List of networks that the zone should be visible in if the zone visibility is private)
+	
+	
+Three Steps to add records to a managed zone:
+
+1- Start Transaction for Zone 
+	gcloud dns record-sets transaction start 
+		--zone 
+
+2- Make Changes
+	gcloud dns record-sets transaction add 
+		--name=REC_NAME 
+		--ttl 
+		--type A/CNAME 
+		--zone=ZONE_NAME 
+		
+3- End Transaction for Zone 
+
+
+__________________________________________________ 
+
+	DATAFLOW 
+	
+Pipeline Examples:
+
+from Pub/Sub	to BigQuertìy 
+				to Cloud Storage
+from Cloud Storage to Bigtable/Cloud Spanner/Datastore/BigQuery 
+
+Bulk compress files in Cloud Storage (Batch) 
+
+Convert file formats between Avro, Parquet and CSV (Batch)
+
+Streaming and Batch Use cases:
+
+- Realtime Fraud Detection, Sensor Data Processing, Log Data Processing, Batch Processing (Load data, convert formats etc)
+
+- Use pre-built templates 
+
+Based on Apache Beam (supports Java, Python, Go...)
+
+Serverless (and Autoscaling)
+
+---------------------------------------------------
+
+	DATAPROC 
+	Data analysis platform
+	
+Managed Spark and Hadoop Service:
+
+	Variety of jobs are supported:
+	Spark, PySpark, SparkR, Hive, SparkSQL, Pig, Hadoop 
+	
+	Perform complex batch processing 
+	
+Multiple Cluster Modes:
+
+- Single Node / Standard / High Availability (3 masters) 
+
+- Ure regular / preemptible VMs 
+
+Use case: Move your Hadoop and Spark clusters to the cloud.
+
+ALTERNATIVE: BigQuery when you run SQL queries on Petabytes.
+
+Go for Cloud Dataproc when you need more than queries 
+
+Example: Complex Batch processing Machine Learning and AI workloads.
+
+
+
+
 
 
 

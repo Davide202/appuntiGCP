@@ -217,6 +217,9 @@ vediamo il gatto!
 
 
 _________________________________________________________
+https://app.pluralsight.com/course-player?clipId=954c35a5-273e-4c11-b6a0-d0438e4cbdb7
+
+
 INTRODUCTION TO CONTAINERS AND KUBERNETES
 
 --Hypervisors create and manage virtual machines
@@ -312,6 +315,9 @@ Cloud Build
 You can upload the container in the Container Registry.
 
 _________________________________________________________
+
+https://app.pluralsight.com/course-player?clipId=95f8f40d-b7ea-484b-981e-d64b7d0aebeb
+
 LAB - Working with Cloud Build
 
 Controllare che 
@@ -456,6 +462,7 @@ The command will reply with a non-zero value. If you had embedded this build in 
 
 End your lab
 ____________________________________________________________
+https://app.pluralsight.com/course-player?clipId=4bc4508c-fafa-4e39-89a2-36a22c0d3e58
 
 	CONTAINER MANAGEMENT
 
@@ -645,6 +652,9 @@ Cloud Functions: Server logic
 	no-ops
 
 _____________________________________________________________
+https://app.pluralsight.com/course-player?clipId=68e46a89-dbd5-4776-877b-09bbf07d3e7d
+
+
 	Kubernetes Concepts:
 
 Kubernetes object model
@@ -676,6 +686,8 @@ In a Pod there are:
 	Containers
 	Shared storage
 
+
+
 Kubernetes assigns each Pod a unique IP addess
 Every container within a Pod shares the network name space
 including IP address and net reports.
@@ -696,14 +708,21 @@ Desired state compared to current state
 	Kubernetes Control Plane, Remediation actions
 
 
+
+---
+https://app.pluralsight.com/course-player?clipId=540f47f9-d579-4bd4-88d8-8c937a29f4b9
+
+Kubernetes Control Plane
+---
+
 ++Cooperationg processes make a Kubernetes cluster work
 ________________________
 Cluster
 	Control plane (VM)
 		kube-APIserver <- kubectl
-			<- etcd
-			<- kube-scheduler
-			<- kube-controller-manager
+			<- etcd (cluster database, its job is reliably store the state of the cluster, cluster configuration data and more dynamic information such as what nodes are part of the cluster, what pod should be running and where they should be running)
+			<- kube-scheduler (is responsible for scheduling pods onto nodes, to do taht it evaluates the requirements of each individual pod and selecting which node is most suitable...)
+			<- kube-controller-manager (it continuously monitors the state of the cluster through kube api server...)
 			<- kube-cloud-manager
 	Node (VM)
 		Kubelet -> kube-APIserver
@@ -813,8 +832,11 @@ In open source kubernetes it does so
 using the firewall capabilities of IP tables which are built
 into the Linux kernel.
 
+---
+https://app.pluralsight.com/course-player?clipId=aeba77cb-8d8d-47c3-93c6-7af9adb1e00a
 
 Google Kubernetes Engine Concepts
+---
 
 GKE manages all of the control playing components for us.
 It still exposes an IP address to which we send all of our kubernetes API requests,
@@ -928,8 +950,11 @@ which allows them to communicate with other Google Cloud services.
 
 For example, nodes can pull container images from Google container registry without needing external IP addresses.
 
+---
+https://app.pluralsight.com/course-player?clipId=aeba77cb-8d8d-47c3-93c6-7af9adb1e00a
 
 	Kubernetes Object Management
+---
 
 All kubernetes objects are identified by a unique name
 and a unique identifier.
@@ -1034,7 +1059,7 @@ Controller object types:
 - DaemonSet
 - Job
 
-Deployments are grat choice for long lived software components like web servers, especilly when we want to manage them as a group.
+Deployments are great choice for long lived software components like web servers, especilly when we want to manage them as a group.
 
 In our example, when cube scheduler schedules pods for a deployment,
 it notifies the kube-APIserver.
@@ -1076,7 +1101,7 @@ spec:
         image: nginx:latest
 --
 
-Deployments can alos do a lot more than this,
+Deployments can also do a lot more than this,
 which you will see later.
 
 
@@ -1192,8 +1217,12 @@ Job will then terminate all those Pods. A related controller is CronJob, which r
 time-based schedule.
 Later modules in this learning path will cover these controllers in more depth.
 
+---
+https://app.pluralsight.com/course-player?clipId=312c5d08-bc39-46f5-b0ad-979caf40bfb6
+
 
 LAB - Deploying Google Kubernetes Engine
+---
 
  on the Navigation menu, click Kubernetes Engine > Clusters.
 
@@ -1593,8 +1622,11 @@ status:
 -_____________________________________________________
 
 
+https://app.pluralsight.com/course-player?clipId=02003bc2-e5b2-45de-aaf0-e64e0fa6df87
 
 Migrate for Anthos
+---
+
 
 Migrate for Anthos moves VMs to containers,
 existing applications into a kubernetes environments.
@@ -1646,37 +1678,41 @@ it creates all the necessary Kubernetes elements on the target cluster.
 
 A Migration is a multi-step processor
 
-First configure processing cluster,
+1- First configure processing cluster,
 you need to create processing cluster.
 
-After that you install the Migrate for Anthos components
+2- After that you install the Migrate for Anthos components
 onto that cluster.
 
 Next you need add a migration source.
 You can migrate from VMware, AWS, Azure or Google Cloud.
 
-Generate and review plan.
+3- Generate and review plan.
 You will need to create a migration object
 with the details of the migration that you're performing.
 This will generate a plan template for you in a yaml file.
 You may need to alter this configuration file to create the level of customization that you desire.
 
 
-Generate artifacts.
+4- Generate artifacts.
 When the plan is ready, you will need to generate 
 the artifacts for the migration.
 This means generating the container images of your applications
 and the yaml file is required for the deployment.
 
-Test.
+5- Test.
 After your migration artifacts have been generated,
 they need to be tested.
 Both the container images and the deployments will be tested at this stage.
 
-Deploy.
+6- Deploy.
 Finally, if the tests are successful,
 you can use the generated artifacts to deploy your application 
 into your production clusters.
+
+
+
+
 
 Example:
 
@@ -2181,17 +2217,264 @@ Connect to a Kubernetes Cluster:
 
 
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+https://app.pluralsight.com/library/courses/architecting-google-kubernetes-engine-workloads-4/table-of-contents
+
+	Architecting with Google Kubernetes Engine:
+		Workloads
+
+Kubernetes Operations
+
+Kubectl must be configured first:
+
+Relies on a config file: $HOME/.kube/config 
+
+Config file contains:
+- Targett cluster name 
+- Credentials for the cluster 
+
+Current config: kubectl config view 
+
+Connecting to a Google Kubernetes Engine cluster:
+
+gcloud container clusters get-credentials CLUSTER_NAME 
+	--zone ZONE_NAME 
+	
+This command writes the configuration information into a config file in the .kube directory in the home directory by default.
 
 
+	Kubects command Syntax
+	
+kubectl [command] [TYPE] [NAME] [flags]
 
+command: get/describe/logs/exec/...
+TYPE: pods/deployments/nodes/...
+	kubectl get pods 
 
+NAME: (name of the object)
+	kubectl get pod my-test-app 
 
-
-
-
-
-
-
-
+flags: 
+	kubectl get pod my-test-app -o=yaml 
+	kubectl get pods -o=wide (wide format)
+	
+the kubectl command has many uses:
+- create kubernetes objects 
+- view objects 
+- delete objects 
+- view and export conigurations 
 
 	
+	Introspection 
+
+get/describe for information about pod and container 
+
+exec for executing command and applications 
+
+logs to see what's happening inside pods
+
+
+Pod phases: Pending, Running, Succeded, Failed, Unknown, CrashLoopBackOff 
+
+
+
+Intercation: exec 
+
+kubectl exec POD_NAME -- COMMAND 
+
+kubectl exec demo -- env 
+kubectl exec demo -- ps aux 
+kubectl exec demo -- cat /proc/1/mounts 
+
+kubectl exec demo -- ls /
+	bin 
+	boot
+	dev 
+	etc
+	...
+	
+	WORKING INSIDE A POD 
+kubectl exec -it POD_NAME -- COMMAND 
+
+kubectl exec -it demo -- /bin/bash 
+root@demo:/# ls 
+bin boot dev etc ... 
+
+kubectl logs POD_NAME 
+
+The logs contain both the standard output and standard error messages that the application within the container have generated.
+
+LAB - CREATE CLUSTER 
+
+export my_zone=us-central1-a
+export my_cluster=standard-cluster-1
+
+gcloud container clusters create $my_cluster 
+	--num-nodes 3 
+	--zone $my_zone 
+	--enable-ip-alias
+
+gcloud container clusters resize $my_cluster 
+	--zone $my_zone 
+	--num-nodes=4
+
+To create a kubeconfig file with the credentials of the current user (to allow authentication) and provide the endpoint details for a specific cluster (to allow communicating with that cluster through the kubectl command-line tool), execute the following command:
+
+gcloud container clusters get-credentials $my_cluster --zone $my_zone
+
+nano ~/.kube/config
+
+kubectl config view
+
+kubectl cluster-info
+
+kubectl config current-context
+
+kubectl config get-contexts
+
+kubectl config use-context gke_${GOOGLE_CLOUD_PROJECT}_us-central1-a_standard-cluster-1
+
+kubectl top nodes
+
+ source <(kubectl completion bash)
+
+In Cloud Shell, type kubectl followed by a space and press the Tab key twice.
+
+In Cloud Shell, type kubectl co and press the Tab key twice.
+The shell outputs all commands starting with "co"
+
+kubectl create deployment --image nginx nginx-1
+
+kubectl get pods
+
+export my_nginx_pod=[your_pod_name]
+
+kubectl describe pod $my_nginx_pod
+
+
+nano ~/test.html
+	<html> 
+	<header>
+	<title>This is title</title>
+	</header>
+	<body> Hello world </body>
+	</html>
+	
+	
+kubectl cp ~/test.html $my_nginx_pod:/usr/share/nginx/html/test.html
+
+kubectl expose pod $my_nginx_pod --port 80 --type LoadBalancer
+
+kubectl get services
+
+curl http://[EXTERNAL_IP]/test.html
+
+
+
+
+
+git clone https://github.com/GoogleCloudPlatform/training-data-analyst
+
+ln -s ~/training-data-analyst/courses/ak8s/v1.1 ~/ak8s
+
+cd ~/ak8s/GKE_Shell/
+
+new-nginx-pod.yaml:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: new-nginx
+  labels:
+    name: new-nginx
+spec:
+  containers:
+  - name: new-nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+	
+kubectl apply -f ./new-nginx-pod.yaml
+
+kubectl exec -it new-nginx /bin/bash
+	apt-get update
+	apt-get install nano
+	
+	cd /usr/share/nginx/html
+	nano test.html
+
+	<html> <header><title>This is title</title></header>
+	<body> Hello world </body>
+	</html>
+
+	exit
+
+kubectl port-forward new-nginx 10081:80
+
+kubectl logs new-nginx -f --timestamps
+
+END OF THE LAB
+
+
+	DEPLOMENTS 
+
+Deployment describe the desired state of pods.
+
+	Roll out updates to the Pods.
+A new ReplicaSet is created that matches the altered version of the deployment.
+
+	Roll back Pods to previous revision.
+
+	Scale or autoscale Pods.
+	
+	Well-suited for stateless applications.
+	
+The desired state is described in a deployment YAML file containing the characteristics of the pods coupled with head operationally run these pods and their life cycle events.
+
+After you submit this file to the kubernetes control plane, it creates a Deplyment Controller which is responsible for converting the desired state into reality and keeping that desired state over time.
+
+Controller is a loop process created by Kubernetes that takes care the routine tasks to ensure the desired state of an object or set objects running on the cluster matches the desired state.
+
+During this process, a ReplicaSet is created, a ReplicaSet is a controler that ensures that a certain number of Pod replicas are running at any give time. 
+
+The Deployment is a high level controller for a Pod that declares a state.
+The Deployment configures  a replicated controller to instantiate and maintain a specific version of the pods specified in the deployment.
+
+Example of Deployment:
+
+apiVersion: apps/v1
+kind: Deployment 
+metadata: 
+  name: my-app 
+spec:
+  replicas: 3
+  template:
+    metadata:
+	  labels:
+	    app: my-app 
+	spec:
+	  containers: 
+	  - name: my-app 
+	    image: gr.io/demo/my-app:1.0 
+		ports: 
+		- containerPort: 8080 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
