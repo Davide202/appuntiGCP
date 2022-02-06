@@ -2758,39 +2758,345 @@ You can change this default by specifying a revision history limit under the dep
 
 	Pausing a Deployment
 	
+kubectl rollout pause deployment DEPLOYMENT_NAME 
+
+kubectl rollout resume deployment DEPLOYMENT_NAME 
+
+kubectl rollout status deployment DEPLOYMENT_NAME 
+
+kubectl delete deployment DEPLOYMENT_NAME 
+
+LAB
+
+export my_zone=us-central1-a
+export my_cluster=standard-cluster-1
+
+source <(kubectl completion bash)
+
+gcloud container clusters get-credentials $my_cluster --zone $my_zone
+
+git clone https://github.com/GoogleCloudPlatform/training-data-analyst
+
+
+Create a soft link as a shortcut to the working directory.
+
+ln -s ~/training-data-analyst/courses/ak8s/v1.1 ~/ak8s
+
+cd ~/ak8s/Deployments/
+
+You will create a deployment using a sample deployment manifest called nginx-deployment.yaml
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+---		
+		
+To deploy your manifest, execute the following command:
+
+kubectl apply -f ./nginx-deployment.yaml
+
+To view a list of deployments, execute the following command:
+
+kubectl get deployments
+
+Scale up and down the number of Pods in deployments
+
+kubectl scale --replicas=1 deployment nginx-deployment
+
+kubectl get deployments
+
+Trigger a deployment rollout and a deployment rollback
+
+kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.9.1 --record
+
+kubectl rollout status deployment.v1.apps/nginx-deployment
+
+kubectl get deployments
+
+kubectl rollout history deployment nginx-deployment
+
+kubectl rollout undo deployments nginx-deployment
+
+kubectl rollout history deployment nginx-deployment
+
+
+View the details of the latest deployment revision
+
+kubectl rollout history deployment/nginx-deployment --revision=3
+
+
+
+Define the service type in the manifest
+
+
+A manifest file called service-nginx.yaml that deploys a LoadBalancer service type
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 60000
+    targetPort: 80
+---
+
+kubectl apply -f ./service-nginx.yaml
+
+kubectl get service nginx
+
+When the external IP appears, open http://[EXTERNAL_IP]:60000/ in a new browser tab to see the server being served through network load balancing.
+It may take a few seconds before the ExternalIP field is populated for your service. This is normal. Just re-run the kubectl get services nginx command every few seconds until the field is populated.
+
+
+Perform a canary deployment
+
+A canary deployment is a separate deployment used to test a new version of your application. A single service targets both the canary and the normal deployments. And it can direct a subset of users to the canary version to mitigate the risk of new releases.
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-canary
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        track: canary
+        Version: 1.9.1
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.9.1
+        ports:
+        - containerPort: 80
+---
+
+kubectl apply -f nginx-canary.yaml
+
+kubectl get deployments
+
+kubectl scale --replicas=0 deployment nginx-deployment
+
+kubectl get deployments
+
+
+Session affinity
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+spec:
+  type: LoadBalancer
+  sessionAffinity: ClientIP
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 60000
+    targetPort: 80
+---
+
+END OF THE LAB 
+
+
+
+	JOBS AND CRON JOBS 
+	
+A scenario where Job provides the solution
+
+File uploaded to the Web server 
+
+Job: Transcode video files 
+
+A Job is created on the cluster.
+The Job Controller schedules a Pod for the Job on a Node.
+
+The Job Controller monitors the Pod 
+
+If a Node failure occurs and the Pod has lost the Job Controller is aware that the task has not been completed.
+
+The Job Controller reschedules the Job Pod to run on a different Node.
+
+The Job Controller continues to monitor the pod until the task completes.
+
+When the task has completed, the Job Controller removes the finished Job in any Pod associated within.
+
+There are two main ways to define a Job:
+	
+	non parallel 
+	
+	parallel.
+	
+---
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: my-app-job 
+spec:
+  completions: 3
+  template:
+    spec:
+...
+
+
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: my-app-job 
+spec:
+  completions: 3
+  parallelism: 2    <----
+  template:
+    spec:
+...
+
+
+
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: pi 
+spec:
+  template:
+    spec:
+	  containers:
+	  - name: pi
+	    image: perl 
+		command: ["perl","-Mbignum=bpi","-wle","print bpi(2000)"]
+	  restartPolicy: Never / OnFailure 
+  backoffLimit: 4 (numbers of retries, default 6 ) 
+---
+
+kubectl apply -f JOB_FILE 
+
+Alternatively:
+
+kubectl run pi --image perl --restart Never --perl -Mbignum bpi -wle 'print bpi(2000)'
 
 
 
 
+There are two types of parallel Jobs: 
+
+- one with a fixed task completion count 
+
+- and the other which process a work queue.
+
+Parallel Job with fixed completition count:
+
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: my-app-job 
+spec:
+  completions: 3
+  parallelism: 2   
+  template:
+    spec:
+...
+
+Parallel Job with with a worker queue:
+
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: my-app-job 
+spec:
+  parallelism: 3   
+  template:
+    spec:
+...
 
 
 
+Inspecting a Job 
+
+kubectl describe job JON_NAME 
+
+kubectl get pod -l [job-name=my-app-job]
 
 
 
+Scaling a Job 
+
+kubectl scale job JOB_NAME --replicas VALUE 
+
+
+Failing a Job 
+
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: my-app-job 
+spec:
+  backoffLimit: 4 
+  activeDeadlineSeconds: 300 (tempo limite)   
+  template:
+    spec:
+...
+
+
+Deleting a Job 
+
+kubectl delete -f JOB_FILE 
+
+kubectl delete job JOB_NAME 
 
 
 
+Retaining Job Pods 
+
+kubectl delete -f JOB_FILE 
+
+kubectl delete job JOB_NAME 
+
+kubectl delte job JOB_NAME 
+	--cascade false 
+	
 
 
+---
 
+https://app.pluralsight.com/course-player?clipId=8b772e8e-7852-4cde-b48e-0421831c85b3
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+---
+	CRONJOBS 
 
 
 
