@@ -2460,6 +2460,324 @@ spec:
 		- containerPort: 8080 
 
 
+Deployment has three different lifecycle states:
+
+	Processing State 
+	Complete State 
+	Failed State 
+
+
+
+There are three ways to create a Deploynent:
+
+1- 
+kubectl apply -f DEPLOYMENT_FILE 
+
+2- 
+kubectl run DEPLOYMENT_NAME 
+	--image IMAGE:TAG 
+	--replicas 3
+	--labels KEY=VALUE 
+	--port 8080 
+	--generator deployment/apps.v1 
+	--save-config 
+	
+3- 
+Cloud Console 
+
+
+kubectl get deployment DEPLOYMENT_NAME 
+
+Output the Deployment Configuration:
+
+kubectl get deployment DEPLOYMENT_NAME -o yaml > this.yaml  
+
+kubectl describe deployment DEPLOYMENT_NAME 
+
+
+
+Scaling a Deployment manually:
+
+kubectl scale deployment DEPLOYMENT_NAME  
+	-replicas=5 
+
+Scaling a Deployment automatically:
+
+kubectol autostale deployment DEPLOYMENT_NAME 
+	--min=5 
+	--max=15 
+	--cpu-percet=75 
+	
+Thrashing is a problem with any type of autoscaling 
+
+Cooldown/delay support:
+--horizontal-pod-autoscaler-downscale-stabilization 
+(default value is 5 minutes)
+
+
+
+
+Updating a Deployment:
+
+kubectl apply -f DEPLOYMENT_FILE 
+
+kubectl set image deployment DEPLOYMENT_NAME IMAGE IMAGE:TAG 
+
+kubectl edit deployment/DEPLOYMENT_NAME 
+
+
+The process behind updating a Deployment:
+
+When a deployment is updated, it launches a new ReplicaSet and creates a new set of Pods in a controlled fashion.
+
+First, new Pods are launched in a new ReplicaSet.
+
+Next, all Pods are deleted from the old ReplicaSet.
+
+Ramped Strategy.
+
+---
+	ROLLING UPDATES DEPLOYMENTS 
+
+In a rolling update strategy,
+the max unavailable and max surged fileds 
+control how the Pods are updated.
+
+These fields of final range for the total number of pause within the deployment 
+regardless of ReplicaSets.
+
+The Max Unavailable fields,
+let's you specify the maximum numbers of pods that can be unavailable during the rollout process.
+This number can either be absolute or percentage.
+Max unavailable = 2 
+Max unavailable = 25% 
+
+The Max Surge allow you to specify
+the maximum number of Pods that can be created concurrently in a new ReplicaSet.
+
+For example you can specify that you want to add two new pause at a time in a new ReplicaSet and the Deployment Controller will do that exactly.
+
+You can also set max surge as a percentage.
+
+Example of a rolling update strategy:
+
+kind: Deployment 
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUdate 
+	rollingUpdate:
+	  maxSurge: 5
+	  maxUnavailable: 10% 
+
+- The maximum number of Pods:
+	  
+Old ReplicaSet = 10
+New ReplicaSet = 5 
+
+Total Pods: 15 (Max) 
+
+- The minimum nember of Pods:
+
+Desired Pods = 10 Pods 
+Max unavailable = 10% of desired Pods 
+Max surge = 5 Pods 
+
+Total Pods = 9 (Min) 
+
+Old ReplicaSet = 9 - 5 = 4 
+New ReplicaSet = 5 
+
+---
+
+	BLUE-GREEN DEPLOYMENTS 
+	
+Applying a Recreate strategy 
+
+kind: Deployment 
+spec: 
+  replicas: 10 
+  strategy: 
+    type: Recreate 
+
+Recreate is a strategy type where all the old Pods are deleted before new Pods are created.
+
+This clearly affects the availability of your application because the new Pods must be created and will not be available instantly.
+
+For example,
+one of the contract of communication between parts of your application is changing and you need to make a clean break. 
+In such situations, 
+continuous deployment strategy doesn't make sense.
+All the replica need to change at once.
+That's when the recreate strategy is recommended.
+
+
+
+SERVICE is a load balancing front end for Pods 
+
+The Kubernetes services has a static IP address that represents a Service or a function in your infrastructure.
+It's a network abstraction for a set of Pods that deliver that service in.
+It hides the ephemeral nature of the individual Pods.
+
+
+A Blue/Green deployment strategy is useful when you want to deploy a new version of an application and also ensure that application service remain available
+while the Deployment is ipdated.
+
+With a Blue/Green strategy,
+a completely new deployment is created with a newer version of the application.
+In this case it's my-app-v2.
+
+When the Pods in the new Deployment are ready,
+the traffic can be switched from the old blue version to the new green version.
+
+This is where a Kubernetes Servic's used.
+
+Services allow you to manage the network traffic flows to a selection of Pods,
+this set od Pods is selected using a label selector.
+
+Applying a blue/green deployment strategy:
+
+kind: Service 
+spec: 
+  selector:
+    app:my-app 
+	version: v1 
+...
+
+kubectl apply -f my-app-v2.yaml 
+
+
+kind: Service 
+spec: 
+  selector:
+    app:my-app 
+	version: v2 
+...
+
+
+kubectl patch service my-app-service -p 
+{"spec":{"selector":{"version":"v2"}}} 
+
+In the Service definition,
+Pods are selected based on the label selector.
+Where Pods in this example belong to my-app-v1
+
+When a new Deployment labeled v2 in this case is created and is ready,
+the version label and the Service has changed to the newer version labeled v2 
+in this example.
+
+Now the traffic will be directed to the newest set of pods.
+The Green Deployment with the v2 version label instead of the old Blue Deployment Pods that have the v1 version label. 
+
+The Blue Deployment with the older version can then be deleted.
+
+The advantage of this update strategy is that roll outs can be instantaneous
+and the newer versions can be tested internally before releasing them to the entire user base.
+
+For example, by using a separate Service definition for test user access.
+
+The disadvantage is that the resources  usage is doubled during the Deployment process. 
+
+
+	---
+	CANARY DEPLOYMENTS 
+	
+The Canary Deployments is another update strategy based on the Blue/Green method.
+Traffic is gradually shifted to the new version.
+
+The main advantages of using Canary Deployments are that 
+you can minimize the excess resource usage during the update.
+And because the roller is gradual,
+issues can be identified before they affect all instances of the application.
+
+Applying a Canary Deployment 
+
+kind: Service 
+spec: 
+  selector: 
+    app: my-app 
+...
+
+kubectl apply -f my-app-v2.yaml	
+
+kubescale scale deploy/my-app-v2 -replicas=10
+
+kubectl delete -f my-app-v1.yaml
+	
+In a Canary update strategy 
+the service selector is based on the application label and does not specify the version.
+
+The selector in this example covers all pods with the app: my-app label.
+This means that with this Canary update strategy version of the service,
+traffic is sent to all pods regardless of the version label.
+This setting allows the service to select and direct traffic to Pods from both deployments.
+
+Initially, the new version of the Deployment will start with zero replicas running and over time as the new version is scaled up,
+the old version of deployment can be scaled down and eventually deleted.
+
+With the Canary update strategy 
+a subset of users will be directed to the new version.
+This allows you to monitor for errors and performance issues as these users use the new version and 
+you quickly roll back minimizing the impact to your overall user base if any issues arise.
+
+However,
+the complete rollout of a deployment using Canary strategy can be a slow process and 
+my require tools such as ISTIO to accurately shift the traffic.
+
+There other deployment strategies such as AB testing and Shadow testing.
+
+
+
+A Service configuration does not normally ensure that all requests from a single client will always connect to the same Pod,
+each request is trated separately and can connect to any Pod Deployment.
+This potentially can cause issues
+if there are significant changes in the functionality between Pods,
+as may happend with a Canary Deployment.
+
+To prevent this,
+you can set the SESSION AFFINITY field to Client IP and the specification of the Service.
+If you need a client's first request to determine which Pod will be used for all subsequent connections.
+
+
+	ROLLOUT 
+
+kubectl rollout undo deployment DEPLOYMENT_NAME 
+	--to-revision=2 
+	
+Inspect the Rollout History:
+
+kubectl rollout history deployment DEPLOYMENT_NAME 
+	--revision=2
+	
+By default,
+the details of the 10 previous ReplicaSet are retained,
+so that you can Rollback to them.
+
+You can change this default by specifying a revision history limit under the deployment specification.
+
+
+	Pausing a Deployment
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
