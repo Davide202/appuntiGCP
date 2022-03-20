@@ -561,7 +561,8 @@ that you've securely stored in contaner registry.
 GKE also integrates with Google's Identity and Access Management (IAM),
 which allows you to control access through the use of the accounts and role permissions.
 
-Stackdriver is Google Cloud System for monitoring and management for services, containers,  applications and infrastructure.
+Stackdriver is Google Cloud System for monitoring and management for 
+services, containers,  applications and infrastructure.
 GKE integrates with Stackdriver monitoring to help you understand your application's performance.
 GKE is integradet with Google Virtual Private Cloud (VPC)
 and makes use of GCO networking features.

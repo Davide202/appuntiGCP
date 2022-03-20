@@ -1,0 +1,89 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1040{\fonttbl{\f0\fnil\fcharset0 Calibri;}{\f1\fswiss\fprq2\fcharset0 Arial;}{\f2\fswiss\fprq2 Arial;}{\f3\fnil\fcharset2 Symbol;}}
+{\colortbl ;\red0\green0\blue255;\red32\green33\blue36;\red255\green255\blue255;\red5\green99\blue193;}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22\lang16\par
+\par
+
+\pard\widctlpar\sa160\sl252\slmult1\b\f1\fs28\lang1040\tab\tab\tab GOOGLE AUTHENTICATION\par
+{{\field{\*\fldinst{HYPERLINK https://cloud.google.com/architecture/identity/overview-google-authentication }}{\fldrslt{https://cloud.google.com/architecture/identity/overview-google-authentication\ul0\cf0}}}}\f1\fs28\par
+\par
+GOOGLE IDENTITIES\par
+
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\widctlpar\fi-284\li284\sa160\sl252\slmult1\lang2057 Identity\b0 : \cf2\highlight3 A person's email address is considered that person's Google identity. \cf0\highlight0\par
+{\pntext\f3\'B7\tab}\cf2\highlight3\b User\b0\i  \b\i0 account\b0\i : \i0\~is a data structure that keeps track of attributes, activities, and configurations that should be applied whenever a certain identity interacts with a Google service. User accounts are identified by an ID that is not exposed externally. User interfaces or APIs therefore require you to reference the user account indirectly by its associated identity, such as\~{{\field{\*\fldinst{HYPERLINK "mailto:alice@gmail.com" }}{\fldrslt{\ul\cf1\cf4\ul alice@gmail.com}}}}\f1\fs28 . \cf0\highlight0\par
+
+\pard\widctlpar\sa160\sl252\slmult1\cf2\highlight3\b The relationship between user accounts and identities is not fixed.\b0\~You can change the primary email address of a user account, which associates a different identity with the user.\par
+\b The relationship between identity and users might not be 1:1.\b0\~A consumer account\~{\cf0\highlight0{\field{\*\fldinst{HYPERLINK "https://support.google.com/accounts/answer/176347?visit_id=637056185813336690-3063594075&rd=1"}}{\fldrslt{\ul\cf1\cf4\highlight3\ul can intentionally be associated with multiple identities}}}}\f1\fs28 , as in the following diagram.\par
+\cf0\highlight0\par
+\b\lang1040 Google\lang2057  for consumers\par
+\cf2\highlight3\b0 If you own a Gmail email address like\~\cf0\highlight0 alice@gmail.com\cf2\highlight3 , then your Gmail account is a\~\i consumer account\i0 . Similarly, if you use the\~\b Create account\b0\~link on the Google Sign-In page and during sign-up you provide a custom email address that you own, such as\~\cf0\highlight0 alice@example.com\cf2\highlight3 , then the resulting account is also a consumer account.\par
+\cf0\highlight0 When a consumer account uses a primary email address that corresponds to the primary or secondary domain of a\~Cloud Identity or Google Workspace account, then the consumer account is also referred to as an\~\b\i unmanaged user account\b0\i0 .\par
+\par
+\b Google for organizations\par
+
+\pard\cbpat3\widctlpar\sb240\sa240\cf2\b0 If your organization uses Google services, it's best to use\~\i managed user accounts\i0 . These accounts are called\~\i managed\i0\~because their lifecycle and configuration can be fully controlled by the organization. \b\i Managed user accounts\b0\i0  are a feature of \b Cloud Identity \b0 and \b Google Workspace\b0 .\par
+\b Organizational unit\b0\par
+An organizational unit (OU) is a sub-container for user accounts that lets you segment the user accounts defined in the Cloud Identity or Google Workspace account into disjoint sets to make them easier to manage. Organizational units are organized hierarchically. Each Cloud Identity or Google Workspace account has a root OU, under which you can create more OUs as needed. You can also nest your OUs.\par
+Group\par
+Groups let you bundle multiple users. You can use groups to manage a mailing list or to apply common access control or configuration to multiple users. Cloud Identity and Google Workspace identify groups by email address\f2\emdash for example, billing-admins@example.com. Similar to a user's primary email address, the group email address must use one of the primary, secondary, or alias domains of the Cloud Identity or Google Workspace account. The email address doesn't need to correspond to a mailbox unless the group is used as a mailing list. Authentication still happens using the user's email rather than the group email, so a user can't log in using a group email address.\f1\lang1040  \par
+\f2\lang2057 A group can have the following entities as members:\par
+
+\pard\cbpat3{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\widctlpar\fi-360\li720\sb240\sa240\sl240\slmult1 Users (managed users or consumer accounts)\par
+{\pntext\f3\'B7\tab}Other groups\par
+{\pntext\f3\'B7\tab}Service accounts\par
+
+\pard\cbpat3\widctlpar\sb240\sa240 Unlike an organizational unit, groups do not act as a container:\f1\lang1040                \f2\lang2057 A user or group can be a member of any number of groups, not just one.\f1\lang1040  \f2\lang2057 Deleting a group does not delete any of the member users or groups.\f1\lang1040  \f2\lang2057 Groups can contain members from any Cloud Identity or Google Workspace account as well as consumer accounts. You can use the disallow members outside your organization setting to restrict members to user accounts of the same Cloud Identity or Google Workspace account.\par
+\b External identities\b0\f1\par
+By federating a Cloud Identity or Google Workspace account with an external IdP, you can enable employees to use their existing identity and credentials to sign in to Google services.\par
+At the most basic level, federation entails setting up single sign-on by using SAML, which links identities in Cloud Identity or Google Workspace to identities managed by your external IdP. (Traduzione: Al livello pi\'f9 elementare, \b la federazione comporta la configurazione del Single Sign-On tramite SAML, che collega le identit\'e0 in Cloud Identity o Google Workspace alle identit\'e0 gestite dal tuo IdP esterno\b0 .)\par
+ To link an identity like alice@example.com and enable it for single sign-on to Google, you must meet two prerequisites:\par
+- Your external IdP must recognize the identity alice@example.com and allow it to be used for single sign-on.\par
+- Your Cloud Identity or Google Workspace account must contain a user account that uses alice@example.com as its identity. This user account must exist before the first single sign-on attempt.\par
+Instead of manually creating and maintaining user accounts in Cloud Identity or Google Workspace, you can automate the process by combining SAML-based single sign-on with automatic user provisioning. The idea of automatic user provisioning is to synchronize all or a subset of the users and groups from an external authoritative source to Cloud Identity or Google Workspace.\par
+Depending on your choice of IdP, SAML-based single sign-on and automatic user provisioning might be handled by the same software component or might require separate components. The domain model therefore distinguishes between a SAML identity provider and an external authoritative source.\par
+\b External SAML identity provider\par
+{{\field{\*\fldinst{HYPERLINK https://www.oracle.com/it/security/cloud-security/what-is-saml/ }}{\fldrslt{https://www.oracle.com/it/security/cloud-security/what-is-saml/\ul0\cf0}}}}\b0\f1\fs28\par
+The external IdP is the sole system for authentication and provides a single sign-on experience for your employees that spans applications. It is external to Google and therefore referred to as an external identity provider.\par
+\b When you enable single sign-on, Cloud Identity or Google Workspace relays(fa affidamento) authentication decisions to the SAML IdP. In SAML terms, Cloud Identity or Google Workspace acts as a service provider that trusts the SAML IdP to verify a user's identity on its behalf.\par
+\b0 Each Cloud Identity or Google Workspace account can refer to at most one external IdP. Multiple Cloud Identity or Google Workspace accounts can refer to different SAML IdPs, but it's not possible to have a single Cloud Identity or Google Workspace account use multiple SAML IdPs.\par
+Commonly used external IdPs include Active Directory Federation Services (AD FS), Azure AD, Okta, or Ping Identity.\par
+\par
+
+\pard\widctlpar\sa160\sl252\slmult1\cf0\b\tab Google Cloud\b0\par
+Like other Google services, Google Cloud relies on Google Sign-In to authenticate users. Google Cloud also closely integrates with Google Workspace and Cloud Identity to allow you to manage resources efficiently.\par
+\par
+Google Cloud introduces the notion of organization nodes, folders, and projects. These entities are primarily used for managing access and configuration, so they are only tangentially relevant in the context of identity management. However, Google Cloud also includes an additional type of user account: service accounts. Service accounts belong to projects and play a crucial role in identity management.\par
+Organization node\par
+An organization is the root node in the Google Cloud resource hierarchy and a container for projects and folders. Organizations let you structure resources hierarchically and are key to managing resources centrally and efficiently. Each organization belongs to a single Cloud Identity or Google Workspace account. The name of the organization is derived from the primary domain name of the corresponding Cloud Identity or Google Workspace account.\par
+\par
+Folder\par
+Folders are nodes in the Google Cloud resource hierarchy and can contain projects, other folders, or a combination of both. You use folders to group resources that share common Identity and Access Management (IAM) policies or organizational policies. These policies automatically apply to all projects in the folder and are also inherited by child folders.\par
+\par
+Folders are similar, but unrelated, to organizational units. Organizational units help you manage users and apply common configuration or policies to users, whereas folders help you manage Google Cloud projects and apply common configuration or policies to projects.\par
+\par
+Project\par
+A project is a container for resources. Projects play a crucial role for managing APIs, billing, and managing access to resources.\par
+\par
+In the context of identity management, projects are relevant because they are the containers for service accounts.\par
+\par
+\b Service account\b0\par
+A service account (or Google Cloud service account) is a special kind of user account that is intended to be used by applications and other types of machine users. Each service account belongs to a Google Cloud project. As is the case with managed user accounts, administrators can fully control the lifecycle and configuration of a service account. Service accounts also use an email address as their identity, but unlike with managed user accounts, the email address always uses a Google-owned domain such as developer.gserviceaccount.com.\par
+Service accounts don't participate in federation and also don't have a password. On Google Cloud, you use IAM to control the permission that a service account has for a compute resource such as a virtual machine (VM) or Cloud Function, removing the need to manage credentials. \b Outside of Google Cloud, you can use service account keys to let an application authenticate by using a service account\b0 .\par
+\par
+\b Kubernetes service account\b0\par
+Kubernetes service accounts are a concept of Kubernetes and are relevant when you use Google Kubernetes Engine (GKE). Similar to Google Cloud service accounts, Kubernetes service accounts are meant to be used by applications, not humans.\par
+Kubernetes service accounts can be used to authenticate when an application calls the Kubernetes API of a Kubernetes cluster, but they cannot be used outside of the cluster. They are not recognized by any Google APIs and are therefore not a replacement for a Google Cloud service account.\par
+When you deploy an application as a Kubernetes Pod, you can associate the Pod with a service account. This association lets the application use the Kubernetes API without having to configure or maintain certificates or other credentials.\par
+By using Workload Identity, you can link a Kubernetes service account to a Google Cloud service account. This link lets an application also authenticate to Google APIs, again without having to maintain certificates or other credentials.\par
+\par
+\tab\tab\tab\tab\b Reference architectures\par
+{{\field{\*\fldinst{HYPERLINK https://cloud.google.com/architecture/identity/reference-architectures }}{\fldrslt{https://cloud.google.com/architecture/identity/reference-architectures\ul0\cf0}}}}\f1\fs28\par
+\par
+\b0\par
+\par
+\par
+\par
+
+\pard\sa200\sl276\slmult1\f0\fs22\lang16\par
+}
+ 
